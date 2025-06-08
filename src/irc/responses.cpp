@@ -101,10 +101,12 @@ Join::Join(std::vector<std::string> words) : Response(std::move(words))
     try
     {
         channel = this->words.at(2);
+        nick = this->words.at(0).substr(1);
+        nick = nick.substr(0, nick.find('!'));
     }
     catch (std::exception& e)
     {
-        throw ParseError("JOIN response does not contain channel", this->words);
+        throw ParseError("malformed JOIN response received", this->words);
     }
 }
 

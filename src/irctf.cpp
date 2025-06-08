@@ -14,7 +14,8 @@ struct ResponseVisitor
 
     void operator() (const irc::response::Join& response)
     {
-        std::cout << "[+] JOIN <" << response.channel << ">\n";
+        std::cout << "[+] JOIN <" << response.channel << "> (" << response.nick
+            << ")\n";
         server.join(response.channel);
     };
 

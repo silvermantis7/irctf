@@ -41,6 +41,7 @@ namespace irc
         {
         public:
             std::string channel;
+            std::string nick;
             Join(std::vector<std::string> words);
         };
 
