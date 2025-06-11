@@ -1,6 +1,8 @@
 #include <iostream>
-#include <variant>
+#include <memory>
+// #include <variant>
 #include "irc/network.hpp"
+#include "gui/gui.hpp"
 
 struct ResponseVisitor
 {
@@ -42,34 +44,46 @@ int main(int argc, char* argv[])
 {
     std::cout << " IRCTF v0.1 \n"
                  "############\n\n";
+    
+    gui::init();
+    std::unique_ptr<gui::Window> window(new gui::Window(800, 600, "IRCTF"));
 
-    try
+    while (window->isOpen())
     {
-        irc::Server server = irc::Server("localhost", "6667");
-        ResponseVisitor rVisit(server);
-
-        server.connect();
-        server.nick("silvermantis");
-        server.auth("silvermantis", "James");
-        server.join("#test");
-
-        for (;;)
-        {
-            std::cout << "[+] reading responses...\n";
-
-            for (irc::response::responseVarient response : server.fetch())
-            {
-                std::visit(rVisit, response);
-            }
-        }
-
-        server.quit();
+        window->clear();
+        window->draw();
+        window->display();
     }
-    catch (std::exception& e)
-    {
-        std::cerr << "[!] IRC network error: " << e.what() << '\n';
-        return -1;
-    }
+
+    gui::terminate();
+
+    // try
+    // {
+    //     irc::Server server = irc::Server("localhost", "6667");
+    //     ResponseVisitor rVisit(server);
+
+    //     server.connect();
+    //     server.nick("silvermantis");
+    //     server.auth("silvermantis", "James");
+    //     server.join("#test");
+
+    //     for (;;)
+    //     {
+    //         std::cout << "[+] reading responses...\n";
+
+    //         for (irc::response::responseVarient response : server.fetch())
+    //         {
+    //             std::visit(rVisit, response);
+    //         }
+    //     }
+
+    //     server.quit();
+    // }
+    // catch (std::exception& e)
+    // {
+    //     std::cerr << "[!] IRC network error: " << e.what() << '\n';
+    //     return -1;
+    // }
 
     return 0;
 }
