@@ -1,11 +1,10 @@
 #include "gui.hpp"
+#include <SDL3/SDL_render.h>
 #include <blend2d.h>
 #include <chrono>
 #include <cmath>
 #include <cstdlib>
 #include <ctime>
-
-#include <iostream>
 
 using namespace gui;
 
@@ -16,12 +15,25 @@ const char* GuiError::what() const noexcept
     return message.c_str();
 }
 
+BLFont Button::blFont;
+BLFontFace Button::blFontFace;
+
 void gui::init()
 {
     if (!SDL_Init(SDL_INIT_VIDEO))
     {
         throw GuiError("failed to initialize SDL");
     }
+
+    BLResult result = gui::Button::blFontFace.createFromFile(
+        "/usr/share/fonts/truetype/lato/Lato-Regular.ttf");
+
+    if (result != BL_SUCCESS)
+    {
+        throw GuiError("failed to load font");
+    }
+
+    Button::blFont.createFromFace(Button::blFontFace, 15.f);
 }
 
 void gui::terminate()
@@ -71,20 +83,13 @@ void Window::clear()
 {
     blContext.begin(blImage);
     blContext.clearAll();
+    SDL_SetRenderDrawColor(renderer, 0x0a, 0x0b, 0x18, 0xff);
+    SDL_RenderClear(renderer);
 }
 
-void Window::draw()
+void Window::draw(Widget& target)
 {
-    const auto p1 = std::chrono::system_clock::now();
-    auto offset = std::chrono::duration_cast<std::chrono::milliseconds>(p1.time_since_epoch()).count();
-
-    BLPath path;
-    path.moveTo(26, 31);
-    path.cubicTo(642, 132, 587 + std::sin((double)offset / 200) * 200, -136, 25, 464);
-    path.cubicTo(882, 404, 144, 267, 27, 31);
-    blContext.fillPath(path, BLRgba32(0xFFFFFFFF));
-    blContext.setStrokeWidth(3);
-    blContext.strokePath(path, BLRgba32(0xFFFF0000));
+    target.draw(blContext);
 }
 
 void Window::display()
@@ -110,4 +115,40 @@ bool Window::isOpen()
     }
 
     return true;
+}
+
+Widget::Widget(double posX, double posY) : posX(posX), posY(posY) { }
+
+Button::Button(double posX, double posY, double width, double height,
+    std::string label, std::function<void()> purpose)
+    : Widget(posX, posY)
+    , width(width)
+    , height(height)
+    , label(label)
+    , purpose(std::move(purpose)) { }
+
+void Button::draw(BLContext& context)
+{
+    const auto p1 = std::chrono::system_clock::now();
+    auto offset = std::chrono::duration_cast<std::chrono::milliseconds>
+        (p1.time_since_epoch()).count();
+
+    BLRoundRect roundRect(posX, posY, width, height, 5);
+    context.strokeRoundRect(roundRect);
+    context.fillRoundRect(roundRect, BLRgba32(0xff454662));
+    context.setStrokeWidth(1.5);
+    context.strokeRoundRect(roundRect, BLRgba32(0xff686881));
+
+    BLGlyphBuffer glyphBuffer;
+    BLTextMetrics textMetrics;
+    glyphBuffer.setUtf8Text(label.c_str());
+    blFont.shape(glyphBuffer);
+    blFont.getTextMetrics(glyphBuffer, textMetrics);
+
+    double textWidth = textMetrics.boundingBox.x1 - textMetrics.boundingBox.x0;
+    double textHeight = blFont.metrics().ascent - blFont.metrics().descent;
+
+    context.setFillStyle(BLRgba32(0xffffffff));
+    context.fillUtf8Text(BLPoint(posX + width / 2.f - textWidth / 2.f, posY
+        + height - (height - textHeight) / 2.f), blFont, label.c_str());
 }

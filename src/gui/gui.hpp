@@ -4,9 +4,15 @@
 #include <string>
 #include <SDL3/SDL.h>
 #include <vector>
+#include <functional>
 
 namespace gui
 {
+    class GuiError;
+    class Window;
+    class Widget;
+    class Button;
+
     class GuiError : public std::exception
     {
         std::string message;
@@ -33,9 +39,32 @@ namespace gui
         ~Window();
 
         void clear();
-        void draw();
+        void draw(Widget& target);
         void display();
 
         bool isOpen();
+    };
+
+    class Widget
+    {
+    public:
+        Widget(double posX, double posY);
+        double posX;
+        double posY;
+        virtual void draw(BLContext& context) = 0;
+    };
+
+    class Button : public Widget
+    {
+        std::string label;
+        std::function<void()> purpose;
+    public:
+        static BLFont blFont;
+        static BLFontFace blFontFace;
+        double width;
+        double height;
+        Button(double xPos, double yPos, double width, double height,
+            std::string label, std::function<void()> purpose);
+        void draw(BLContext& context) override;
     };
 }

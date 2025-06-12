@@ -1,8 +1,11 @@
+#include <array>
+#include <chrono>
 #include <iostream>
 #include <memory>
 // #include <variant>
 #include "irc/network.hpp"
 #include "gui/gui.hpp"
+#include <math.h>
 
 struct ResponseVisitor
 {
@@ -44,14 +47,35 @@ int main(int argc, char* argv[])
 {
     std::cout << " IRCTF v0.1 \n"
                  "############\n\n";
-    
+                 
     gui::init();
     std::unique_ptr<gui::Window> window(new gui::Window(800, 600, "IRCTF"));
+                 
+    std::array<std::unique_ptr<gui::Button>, 7> buttons;
 
+    for (int iter = 0; iter < buttons.size(); iter++)
+    {
+        buttons.at(iter) = std::make_unique<gui::Button>(10, 30 + iter * 25,
+            80, 20, "hello", nullptr);
+    }
+                 
     while (window->isOpen())
     {
         window->clear();
-        window->draw();
+
+        double offset = std::chrono::duration_cast<std::chrono::milliseconds>
+        (std::chrono::system_clock::now().time_since_epoch()).count();
+
+        for (int iter = 0; iter < buttons.size(); iter++)
+        {
+
+            auto& button = buttons.at(iter);
+
+            // int posXSwap = button->posX;
+            // button->posX += std::sin(offset / 200.f) * iter * 30 + iter * 30;
+            window->draw(*button);
+            // button->posX = posXSwap;
+        }
         window->display();
     }
 
