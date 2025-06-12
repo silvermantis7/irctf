@@ -1,5 +1,11 @@
 #include "gui.hpp"
 #include <blend2d.h>
+#include <chrono>
+#include <cmath>
+#include <cstdlib>
+#include <ctime>
+
+#include <iostream>
 
 using namespace gui;
 
@@ -63,14 +69,18 @@ Window::~Window()
 
 void Window::clear()
 {
+    blContext.begin(blImage);
     blContext.clearAll();
 }
 
 void Window::draw()
 {
+    const auto p1 = std::chrono::system_clock::now();
+    auto offset = std::chrono::duration_cast<std::chrono::milliseconds>(p1.time_since_epoch()).count();
+
     BLPath path;
     path.moveTo(26, 31);
-    path.cubicTo(642, 132, 587, -136, 25, 464);
+    path.cubicTo(642, 132, 587 + std::sin((double)offset / 200) * 200, -136, 25, 464);
     path.cubicTo(882, 404, 144, 267, 27, 31);
     blContext.fillPath(path, BLRgba32(0xFFFFFFFF));
     blContext.setStrokeWidth(3);
