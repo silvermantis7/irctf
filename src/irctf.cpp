@@ -43,6 +43,8 @@ struct ResponseVisitor
     };
 };
 
+void runWindow(gui::Window& window);
+
 int main(int argc, char* argv[])
 {
     std::cout << " IRCTF v0.1 \n"
@@ -50,34 +52,7 @@ int main(int argc, char* argv[])
                  
     gui::init();
     std::unique_ptr<gui::Window> window(new gui::Window(800, 600, "IRCTF"));
-                 
-    std::array<std::unique_ptr<gui::Button>, 7> buttons;
-
-    for (int iter = 0; iter < buttons.size(); iter++)
-    {
-        buttons.at(iter) = std::make_unique<gui::Button>(10, 30 + iter * 25,
-            80, 20, "hello", nullptr);
-    }
-                 
-    while (window->isOpen())
-    {
-        window->clear();
-
-        double offset = std::chrono::duration_cast<std::chrono::milliseconds>
-        (std::chrono::system_clock::now().time_since_epoch()).count();
-
-        for (int iter = 0; iter < buttons.size(); iter++)
-        {
-
-            auto& button = buttons.at(iter);
-
-            // int posXSwap = button->posX;
-            // button->posX += std::sin(offset / 200.f) * iter * 30 + iter * 30;
-            window->draw(*button);
-            // button->posX = posXSwap;
-        }
-        window->display();
-    }
+    runWindow(*window);
 
     gui::terminate();
 
@@ -110,4 +85,54 @@ int main(int argc, char* argv[])
     // }
 
     return 0;
+}
+
+void runWindow(gui::Window& window)
+{
+    std::array<std::unique_ptr<gui::Button>, 7> buttons;
+
+    for (int iter = 0; iter < buttons.size(); iter++)
+    {
+        buttons.at(iter) = std::make_unique<gui::Button>(window, 10,
+            30 + iter * 25, 60, 20, "hello", nullptr);
+    }
+
+    buttons.at(1)->activate = []{ std::cout << "[+] button clicked\n"; };
+
+    for (;;)
+    {
+        SDL_Event event;
+        while (window.pollEvents(event))
+        {
+            switch (event.type)
+            {
+            case SDL_EVENT_QUIT:
+                return;
+            case SDL_EVENT_MOUSE_BUTTON_DOWN:
+                for (auto& button : buttons)
+                {
+                    if (button->mouseOver() && button->activate)
+                    {
+                        button->activate();
+                    }
+                }
+            }
+        }
+
+        window.clear();
+
+        double offset = std::chrono::duration_cast<std::chrono::milliseconds>
+        (std::chrono::system_clock::now().time_since_epoch()).count();
+
+        for (int iter = 0; iter < buttons.size(); iter++)
+        {
+            auto& button = buttons.at(iter);
+
+            // int posXSwap = button->posX;
+            // button->posX += std::sin(offset / 200.f) * iter * 30 + iter * 30;
+            buttons.at(iter)->draw();
+            // button->posX = posXSwap;
+        }
+        window.display();
+    }
 }

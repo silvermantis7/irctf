@@ -33,38 +33,43 @@ namespace gui
         SDL_Texture* texture;
         std::unique_ptr<std::vector<uint32_t>> pixels;
         BLImage blImage;
-        BLContext blContext;
-    public:
+        public:
         Window(int width, int height, std::string title);
         ~Window();
-
+        BLContext blContext;
         void clear();
-        void draw(Widget& target);
         void display();
-
-        bool isOpen();
+        bool pollEvents(SDL_Event& event);
     };
 
     class Widget
     {
+    protected:
+        Window& window;
     public:
-        Widget(double posX, double posY);
+        Widget(Window& window, double posX, double posY);
         double posX;
         double posY;
-        virtual void draw(BLContext& context) = 0;
+        virtual void draw() = 0;
     };
 
     class Button : public Widget
     {
         std::string label;
-        std::function<void()> purpose;
-    public:
+        public:
+        std::function<void()> activate;
+        uint32_t bgColor = 0xff454662;
+        uint32_t borderColor = 0xff686881;
+        uint32_t textColor = 0xffffffff;
+
         static BLFont blFont;
         static BLFontFace blFontFace;
         double width;
         double height;
-        Button(double xPos, double yPos, double width, double height,
-            std::string label, std::function<void()> purpose);
-        void draw(BLContext& context) override;
+        void draw(bool highlight);
+        Button(Window& window, double posX, double posY, double width,
+            double height, std::string label, std::function<void()> activate);
+        void draw() override;
+        bool mouseOver();
     };
 }

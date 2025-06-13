@@ -1,5 +1,5 @@
 #include "gui.hpp"
-#include <SDL3/SDL_render.h>
+#include <SDL3/SDL.h>
 #include <blend2d.h>
 #include <chrono>
 #include <cmath>
@@ -87,11 +87,6 @@ void Window::clear()
     SDL_RenderClear(renderer);
 }
 
-void Window::draw(Widget& target)
-{
-    target.draw(blContext);
-}
-
 void Window::display()
 {
     blContext.end();
@@ -102,42 +97,41 @@ void Window::display()
     SDL_RenderPresent(renderer);
 }
 
-bool Window::isOpen()
+bool Window::pollEvents(SDL_Event& event)
 {
-    SDL_Event event;
-
-    while (SDL_PollEvent(&event))
-    {
-        if (event.type == SDL_EVENT_QUIT)
-        {
-            return false;
-        }
-    }
-
-    return true;
+    return SDL_PollEvent(&event);
 }
 
-Widget::Widget(double posX, double posY) : posX(posX), posY(posY) { }
+Widget::Widget(Window& window, double posX, double posY)
+    : window(window)
+    , posX(posX)
+    , posY(posY) { }
 
-Button::Button(double posX, double posY, double width, double height,
-    std::string label, std::function<void()> purpose)
-    : Widget(posX, posY)
+Button::Button(Window& window, double posX, double posY, double width,
+    double height, std::string label, std::function<void()> activate)
+    : Widget(window, posX, posY)
     , width(width)
     , height(height)
     , label(label)
-    , purpose(std::move(purpose)) { }
+    , activate(std::move(activate)) { }
 
-void Button::draw(BLContext& context)
+void Button::draw()
+{
+    draw(mouseOver());
+}
+
+void Button::draw(bool highlight)
 {
     const auto p1 = std::chrono::system_clock::now();
     auto offset = std::chrono::duration_cast<std::chrono::milliseconds>
         (p1.time_since_epoch()).count();
 
-    BLRoundRect roundRect(posX, posY, width, height, 5);
-    context.strokeRoundRect(roundRect);
-    context.fillRoundRect(roundRect, BLRgba32(0xff454662));
-    context.setStrokeWidth(1.5);
-    context.strokeRoundRect(roundRect, BLRgba32(0xff686881));
+    BLRoundRect roundRect(posX, posY, width, height, 2);
+    window.blContext.strokeRoundRect(roundRect);
+    window.blContext.fillRoundRect(roundRect,
+        BLRgba32(highlight ? borderColor : bgColor));
+    window.blContext.setStrokeWidth(1.5);
+    window.blContext.strokeRoundRect(roundRect, BLRgba32(borderColor));
 
     BLGlyphBuffer glyphBuffer;
     BLTextMetrics textMetrics;
@@ -148,7 +142,16 @@ void Button::draw(BLContext& context)
     double textWidth = textMetrics.boundingBox.x1 - textMetrics.boundingBox.x0;
     double textHeight = blFont.metrics().ascent - blFont.metrics().descent;
 
-    context.setFillStyle(BLRgba32(0xffffffff));
-    context.fillUtf8Text(BLPoint(posX + width / 2.f - textWidth / 2.f, posY
-        + height - (height - textHeight) / 2.f), blFont, label.c_str());
+    window.blContext.setFillStyle(BLRgba32(textColor));
+    window.blContext.fillUtf8Text(BLPoint(posX + width / 2.f - textWidth / 2.f,
+        posY + height - (height - textHeight) / 2.f), blFont, label.c_str());
+}
+
+bool Button::mouseOver()
+{
+    float x, y;
+    SDL_GetMouseState(&x, &y);
+
+    return x >= posX && x <= (posX + width)
+        && y >= posY && y <= (posY + height);
 }
