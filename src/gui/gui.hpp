@@ -11,6 +11,7 @@ namespace gui
     class GuiError;
     class Window;
     class Widget;
+    class Hoverable;
     class Button;
 
     class GuiError : public std::exception
@@ -47,16 +48,35 @@ namespace gui
     protected:
         Window& window;
     public:
-        Widget(Window& window, double posX, double posY);
+        Widget(Window& window, double posX, double posY, double width,
+            double height);
         double posX;
         double posY;
+        double width;
+        double height;
         virtual void draw() = 0;
     };
 
-    class Button : public Widget
+    class Hoverable : public Widget
+    {
+        static std::vector<Hoverable*> existing;
+    public:
+        enum HoverTypes { BUTTON };
+        HoverTypes hoverType;
+        Hoverable(Window& window, double posX, double posY, double width,
+            double height);
+        ~Hoverable();
+
+        static void findFocus(double mouseX, double mouseY);
+        static Hoverable* current;
+    };
+
+    class Button : public Hoverable
     {
         std::string label;
-        public:
+        bool isFocused = false;
+    public:
+        HoverTypes hoverType = HoverTypes::BUTTON;
         std::function<void()> activate;
         uint32_t bgColor = 0xff454662;
         uint32_t borderColor = 0xff686881;
@@ -64,12 +84,9 @@ namespace gui
 
         static BLFont blFont;
         static BLFontFace blFontFace;
-        double width;
-        double height;
         void draw(bool highlight);
         Button(Window& window, double posX, double posY, double width,
             double height, std::string label, std::function<void()> activate);
         void draw() override;
-        bool mouseOver();
     };
 }

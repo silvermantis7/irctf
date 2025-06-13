@@ -1,5 +1,6 @@
 #include "gui.hpp"
 #include <SDL3/SDL.h>
+#include <algorithm>
 #include <blend2d.h>
 #include <chrono>
 #include <cmath>
@@ -102,22 +103,55 @@ bool Window::pollEvents(SDL_Event& event)
     return SDL_PollEvent(&event);
 }
 
-Widget::Widget(Window& window, double posX, double posY)
+Widget::Widget(Window& window, double posX, double posY, double width,
+    double height)
     : window(window)
     , posX(posX)
-    , posY(posY) { }
+    , posY(posY)
+    , width(width)
+    , height(height) { }
+
+std::vector<Hoverable*> Hoverable::existing;
+Hoverable* Hoverable::current = nullptr;
+
+Hoverable::Hoverable(Window& window, double posX, double posY, double width,
+    double height)
+    : Widget(window, posX, posY, width, height)
+{
+    existing.push_back(this);
+}
+
+Hoverable::~Hoverable()
+{
+    existing.erase(std::remove(existing.begin(), existing.end(), this));
+}
+
+void Hoverable::findFocus(double mouseX, double mouseY)
+{
+    for (Hoverable* hoverable : existing)
+    {
+        if (mouseX >= hoverable->posX
+            && mouseX <= (hoverable->posX + hoverable->width)
+            && mouseY >= hoverable->posY
+            && mouseY <= (hoverable->posY + hoverable->height))
+        {
+            current = hoverable;
+            return;
+        }
+    }
+
+    current = nullptr;
+}
 
 Button::Button(Window& window, double posX, double posY, double width,
     double height, std::string label, std::function<void()> activate)
-    : Widget(window, posX, posY)
-    , width(width)
-    , height(height)
+    : Hoverable(window, posX, posY, width, height)
     , label(label)
     , activate(std::move(activate)) { }
 
 void Button::draw()
 {
-    draw(mouseOver());
+    draw(Hoverable::current == this);
 }
 
 void Button::draw(bool highlight)
@@ -145,13 +179,4 @@ void Button::draw(bool highlight)
     window.blContext.setFillStyle(BLRgba32(textColor));
     window.blContext.fillUtf8Text(BLPoint(posX + width / 2.f - textWidth / 2.f,
         posY + height - (height - textHeight) / 2.f), blFont, label.c_str());
-}
-
-bool Button::mouseOver()
-{
-    float x, y;
-    SDL_GetMouseState(&x, &y);
-
-    return x >= posX && x <= (posX + width)
-        && y >= posY && y <= (posY + height);
 }

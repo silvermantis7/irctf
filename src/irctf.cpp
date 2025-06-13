@@ -91,6 +91,10 @@ void runWindow(gui::Window& window)
 {
     std::array<std::unique_ptr<gui::Button>, 7> buttons;
 
+    gui::Button* lone = new gui::Button(window, 200, 200, 50, 20, "hello",
+        nullptr);
+    delete lone;
+
     for (int iter = 0; iter < buttons.size(); iter++)
     {
         buttons.at(iter) = std::make_unique<gui::Button>(window, 10,
@@ -101,6 +105,11 @@ void runWindow(gui::Window& window)
 
     for (;;)
     {
+        float mouseX, mouseY;
+        SDL_GetMouseState(&mouseX, &mouseY);
+        gui::Hoverable::findFocus(mouseX, mouseY);
+        gui::Hoverable* inFocus = gui::Hoverable::current;
+
         SDL_Event event;
         while (window.pollEvents(event))
         {
@@ -109,13 +118,13 @@ void runWindow(gui::Window& window)
             case SDL_EVENT_QUIT:
                 return;
             case SDL_EVENT_MOUSE_BUTTON_DOWN:
-                for (auto& button : buttons)
+                if (inFocus && inFocus->hoverType
+                    == gui::Hoverable::HoverTypes::BUTTON
+                    && static_cast<gui::Button*>(inFocus)->activate)
                 {
-                    if (button->mouseOver() && button->activate)
-                    {
-                        button->activate();
-                    }
+                    static_cast<gui::Button*>(inFocus)->activate();
                 }
+                break;
             }
         }
 
@@ -133,6 +142,7 @@ void runWindow(gui::Window& window)
             buttons.at(iter)->draw();
             // button->posX = posXSwap;
         }
+
         window.display();
     }
 }
