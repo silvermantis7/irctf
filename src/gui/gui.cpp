@@ -2,7 +2,6 @@
 #include <SDL3/SDL.h>
 #include <algorithm>
 #include <blend2d.h>
-#include <chrono>
 #include <cmath>
 #include <cstdlib>
 #include <ctime>
@@ -111,61 +110,67 @@ Widget::Widget(Window& window, double posX, double posY, double width,
     , width(width)
     , height(height) { }
 
-std::vector<Hoverable*> Hoverable::existing;
-Hoverable* Hoverable::current = nullptr;
+std::vector<Selectable*> Selectable::existing;
+Selectable* Selectable::hovered = nullptr;
+Selectable* Selectable::selected = nullptr;
 
-Hoverable::Hoverable(Window& window, double posX, double posY, double width,
+Selectable::Selectable(Window& window, double posX, double posY, double width,
     double height)
     : Widget(window, posX, posY, width, height)
 {
     existing.push_back(this);
 }
 
-Hoverable::~Hoverable()
+Selectable::~Selectable()
 {
     existing.erase(std::remove(existing.begin(), existing.end(), this));
 }
 
-void Hoverable::findFocus(double mouseX, double mouseY)
+void Selectable::findFocus(double mouseX, double mouseY)
 {
-    for (Hoverable* hoverable : existing)
+    for (Selectable* hoverable : existing)
     {
         if (mouseX >= hoverable->posX
             && mouseX <= (hoverable->posX + hoverable->width)
             && mouseY >= hoverable->posY
             && mouseY <= (hoverable->posY + hoverable->height))
         {
-            current = hoverable;
+            hovered = hoverable;
             return;
         }
     }
 
-    current = nullptr;
+    hovered = nullptr;
 }
 
 Button::Button(Window& window, double posX, double posY, double width,
     double height, std::string label, std::function<void()> activate)
-    : Hoverable(window, posX, posY, width, height)
+    : Selectable(window, posX, posY, width, height)
     , label(label)
     , activate(std::move(activate)) { }
 
 void Button::draw()
 {
-    draw(Hoverable::current == this);
+    draw(Selectable::hovered == this);
+}
+
+void Button::select()
+{
+    if (activate)
+    {
+        activate();
+    }
+
+    selected = nullptr;
 }
 
 void Button::draw(bool highlight)
 {
-    const auto p1 = std::chrono::system_clock::now();
-    auto offset = std::chrono::duration_cast<std::chrono::milliseconds>
-        (p1.time_since_epoch()).count();
-
     BLRoundRect roundRect(posX, posY, width, height, 2);
-    window.blContext.strokeRoundRect(roundRect);
     window.blContext.fillRoundRect(roundRect,
-        BLRgba32(highlight ? borderColor : bgColor));
+        highlight ? borderColor : bgColor);
     window.blContext.setStrokeWidth(1.5);
-    window.blContext.strokeRoundRect(roundRect, BLRgba32(borderColor));
+    window.blContext.strokeRoundRect(roundRect, borderColor);
 
     BLGlyphBuffer glyphBuffer;
     BLTextMetrics textMetrics;
@@ -176,7 +181,35 @@ void Button::draw(bool highlight)
     double textWidth = textMetrics.boundingBox.x1 - textMetrics.boundingBox.x0;
     double textHeight = blFont.metrics().ascent - blFont.metrics().descent;
 
-    window.blContext.setFillStyle(BLRgba32(textColor));
+    window.blContext.setFillStyle(textColor);
     window.blContext.fillUtf8Text(BLPoint(posX + width / 2.f - textWidth / 2.f,
         posY + height - (height - textHeight) / 2.f), blFont, label.c_str());
+}
+
+TextBox::TextBox(Window& window, double posX, double posY, double width,
+    double height) : Selectable(window, posX, posY, width, height) { }
+
+void TextBox::draw()
+{
+    draw(Selectable::hovered == this);
+}
+
+void TextBox::draw(bool highlight)
+{
+    BLRect rect(posX, posY, width, height);
+    window.blContext.fillRect(rect, highlight ? highlightColor : bgColor);
+    window.blContext.setStrokeWidth(1.f);
+    window.blContext.strokeRect(rect, borderColor);
+
+    if (selected == this)
+    {
+        BLLine cursor = BLLine(posX + 3, posY + height - 3, posX + 16,
+            posY + height - 3);
+        window.blContext.strokeLine(cursor, textColor);
+    }
+}
+
+void TextBox::select()
+{
+    selected = this;
 }

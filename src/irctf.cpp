@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <array>
 #include <chrono>
 #include <iostream>
@@ -91,10 +92,6 @@ void runWindow(gui::Window& window)
 {
     std::array<std::unique_ptr<gui::Button>, 7> buttons;
 
-    gui::Button* lone = new gui::Button(window, 200, 200, 50, 20, "hello",
-        nullptr);
-    delete lone;
-
     for (int iter = 0; iter < buttons.size(); iter++)
     {
         buttons.at(iter) = std::make_unique<gui::Button>(window, 10,
@@ -103,12 +100,15 @@ void runWindow(gui::Window& window)
 
     buttons.at(1)->activate = []{ std::cout << "[+] button clicked\n"; };
 
+    std::unique_ptr<gui::TextBox>
+        textBox(std::make_unique<gui::TextBox>(window, 200, 200, 200, 20));
+
     for (;;)
     {
         float mouseX, mouseY;
         SDL_GetMouseState(&mouseX, &mouseY);
-        gui::Hoverable::findFocus(mouseX, mouseY);
-        gui::Hoverable* inFocus = gui::Hoverable::current;
+        gui::Selectable::findFocus(mouseX, mouseY);
+        gui::Selectable* inFocus = gui::Selectable::hovered;
 
         SDL_Event event;
         while (window.pollEvents(event))
@@ -118,12 +118,11 @@ void runWindow(gui::Window& window)
             case SDL_EVENT_QUIT:
                 return;
             case SDL_EVENT_MOUSE_BUTTON_DOWN:
-                if (inFocus && inFocus->hoverType
-                    == gui::Hoverable::HoverTypes::BUTTON
-                    && static_cast<gui::Button*>(inFocus)->activate)
+                if (inFocus)
                 {
-                    static_cast<gui::Button*>(inFocus)->activate();
+                    inFocus->select();
                 }
+
                 break;
             }
         }
@@ -133,15 +132,12 @@ void runWindow(gui::Window& window)
         double offset = std::chrono::duration_cast<std::chrono::milliseconds>
         (std::chrono::system_clock::now().time_since_epoch()).count();
 
-        for (int iter = 0; iter < buttons.size(); iter++)
+        for (std::unique_ptr<gui::Button>& button : buttons)
         {
-            auto& button = buttons.at(iter);
-
-            // int posXSwap = button->posX;
-            // button->posX += std::sin(offset / 200.f) * iter * 30 + iter * 30;
-            buttons.at(iter)->draw();
-            // button->posX = posXSwap;
+            button->draw();
         }
+
+        textBox->draw();
 
         window.display();
     }

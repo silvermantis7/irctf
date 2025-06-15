@@ -11,7 +11,7 @@ namespace gui
     class GuiError;
     class Window;
     class Widget;
-    class Hoverable;
+    class Selectable;
     class Button;
 
     class GuiError : public std::exception
@@ -57,30 +57,31 @@ namespace gui
         virtual void draw() = 0;
     };
 
-    class Hoverable : public Widget
+    class Selectable : public Widget
     {
-        static std::vector<Hoverable*> existing;
+        static std::vector<Selectable*> existing;
     public:
-        enum HoverTypes { BUTTON };
-        HoverTypes hoverType;
-        Hoverable(Window& window, double posX, double posY, double width,
+        enum SelectTypes { BUTTON, TEXT_BOX };
+        SelectTypes selectType;
+        Selectable(Window& window, double posX, double posY, double width,
             double height);
-        ~Hoverable();
+        ~Selectable();
 
         static void findFocus(double mouseX, double mouseY);
-        static Hoverable* current;
+        static Selectable* hovered;
+        static Selectable* selected;
+        virtual void select() = 0;
     };
 
-    class Button : public Hoverable
+    class Button : public Selectable
     {
         std::string label;
-        bool isFocused = false;
     public:
-        HoverTypes hoverType = HoverTypes::BUTTON;
+        SelectTypes selectType = SelectTypes::BUTTON;
         std::function<void()> activate;
-        uint32_t bgColor = 0xff454662;
-        uint32_t borderColor = 0xff686881;
-        uint32_t textColor = 0xffffffff;
+        BLRgba32 bgColor = BLRgba32(0xff454662);
+        BLRgba32 borderColor = BLRgba32(0xff686881);
+        BLRgba32 textColor = BLRgba32(0xffffffff);
 
         static BLFont blFont;
         static BLFontFace blFontFace;
@@ -88,5 +89,23 @@ namespace gui
         Button(Window& window, double posX, double posY, double width,
             double height, std::string label, std::function<void()> activate);
         void draw() override;
+
+        void select() override;
+    };
+
+    class TextBox : public Selectable
+    {
+    public:
+        SelectTypes selectType = SelectTypes::TEXT_BOX;
+        TextBox(Window& window, double posX, double posY, double width,
+            double height);
+        void draw() override;
+        void draw(bool highlight);
+        BLRgba32 bgColor = BLRgba32(0xff000000);
+        BLRgba32 highlightColor = BLRgba32(0xff404040);
+        BLRgba32 borderColor = BLRgba32(0xffffffff);
+        BLRgba32 textColor = BLRgba32(0xffffffff);
+
+        void select() override;
     };
 }
