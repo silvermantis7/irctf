@@ -61,8 +61,8 @@ namespace gui
     {
         static std::vector<Selectable*> existing;
     public:
-        enum SelectTypes { BUTTON, TEXT_BOX };
-        SelectTypes selectType;
+        enum SelectTypes { NONE, BUTTON, TEXT_BOX };
+        SelectTypes selectType = NONE;
         Selectable(Window& window, double posX, double posY, double width,
             double height);
         ~Selectable();
@@ -83,8 +83,6 @@ namespace gui
         BLRgba32 borderColor = BLRgba32(0xff686881);
         BLRgba32 textColor = BLRgba32(0xffffffff);
 
-        static BLFont blFont;
-        static BLFontFace blFontFace;
         void draw(bool highlight);
         Button(Window& window, double posX, double posY, double width,
             double height, std::string label, std::function<void()> activate);
@@ -99,6 +97,7 @@ namespace gui
         SelectTypes selectType = SelectTypes::TEXT_BOX;
         TextBox(Window& window, double posX, double posY, double width,
             double height);
+        std::string textBuffer = "changeme"; // TODO: change
         void draw() override;
         void draw(bool highlight);
         BLRgba32 bgColor = BLRgba32(0xff000000);
@@ -108,4 +107,7 @@ namespace gui
 
         void select() override;
     };
+
+    static BLFont blFont;
+    static BLFontFace blFontFace;
 }

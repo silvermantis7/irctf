@@ -50,11 +50,20 @@ int main(int argc, char* argv[])
 {
     std::cout << " IRCTF v0.1 \n"
                  "############\n\n";
-                 
-    gui::init();
-    std::unique_ptr<gui::Window> window(new gui::Window(800, 600, "IRCTF"));
-    runWindow(*window);
 
+    std::unique_ptr<gui::Window> window;
+
+    try
+    {
+        gui::init();
+        window = std::make_unique<gui::Window>(800, 600, "IRCTF");
+    }
+    catch (std::exception& e)
+    {
+        std::cerr << "GUI error: " << e.what() << '\n';
+    }
+
+    runWindow(*window);
     gui::terminate();
 
     // try

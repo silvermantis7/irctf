@@ -15,9 +15,6 @@ const char* GuiError::what() const noexcept
     return message.c_str();
 }
 
-BLFont Button::blFont;
-BLFontFace Button::blFontFace;
-
 void gui::init()
 {
     if (!SDL_Init(SDL_INIT_VIDEO))
@@ -25,15 +22,15 @@ void gui::init()
         throw GuiError("failed to initialize SDL");
     }
 
-    BLResult result = gui::Button::blFontFace.createFromFile(
-        "/usr/share/fonts/truetype/lato/Lato-Regular.ttf");
-
+    BLResult result = gui::blFontFace.createFromFile(
+        "C:\\Windows\\Fonts\\Arial.ttf");
+    
     if (result != BL_SUCCESS)
     {
         throw GuiError("failed to load font");
     }
-
-    Button::blFont.createFromFace(Button::blFontFace, 15.f);
+    
+    blFont.createFromFace(blFontFace, 15.f);
 }
 
 void gui::terminate()
@@ -177,10 +174,10 @@ void Button::draw(bool highlight)
     glyphBuffer.setUtf8Text(label.c_str());
     blFont.shape(glyphBuffer);
     blFont.getTextMetrics(glyphBuffer, textMetrics);
-
+    
     double textWidth = textMetrics.boundingBox.x1 - textMetrics.boundingBox.x0;
     double textHeight = blFont.metrics().ascent - blFont.metrics().descent;
-
+    
     window.blContext.setFillStyle(textColor);
     window.blContext.fillUtf8Text(BLPoint(posX + width / 2.f - textWidth / 2.f,
         posY + height - (height - textHeight) / 2.f), blFont, label.c_str());
@@ -201,9 +198,30 @@ void TextBox::draw(bool highlight)
     window.blContext.setStrokeWidth(1.f);
     window.blContext.strokeRect(rect, borderColor);
 
+	int lineX = posX + 3;
+
+	// draw text if any
+    if (!textBuffer.empty())
+    {
+        BLGlyphBuffer glyphBuffer;
+        BLTextMetrics textMetrics;
+        glyphBuffer.setUtf8Text(textBuffer.c_str());
+        blFont.shape(glyphBuffer);
+        blFont.getTextMetrics(glyphBuffer, textMetrics);
+        double textWidth = textMetrics.boundingBox.x1
+            - textMetrics.boundingBox.x0;
+        double textHeight = blFont.metrics().ascent - blFont.metrics().descent;
+        window.blContext.setFillStyle(textColor);
+        window.blContext.fillUtf8Text(BLPoint(posX + 3,
+            posY + height - (height - textHeight) / 2.f), blFont,
+            textBuffer.c_str());
+
+		lineX += textMetrics.advance.x;
+	}
+    
     if (selected == this)
     {
-        BLLine cursor = BLLine(posX + 3, posY + height - 3, posX + 16,
+        BLLine cursor = BLLine(lineX, posY + height - 3, lineX + 10,
             posY + height - 3);
         window.blContext.strokeLine(cursor, textColor);
     }

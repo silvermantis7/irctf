@@ -10,7 +10,6 @@ set(CMAKE_CXX_FLAGS_RELEASE "-Ofast")
 
 set(APP_DIR "${CMAKE_CURRENT_LIST_DIR}")
 set(BLEND2D_DIR "${APP_DIR}/external/blend2d")
-set(BLEND2D_STATIC TRUE)
 set(BLEND2D_NO_JIT TRUE)
 include("${BLEND2D_DIR}/CMakeLists.txt")
 
