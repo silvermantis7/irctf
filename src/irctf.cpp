@@ -45,6 +45,7 @@ struct ResponseVisitor
 };
 
 void runWindow(gui::Window& window);
+char readChar(SDL_Event event);
 
 int main(int argc, char* argv[])
 {
@@ -99,25 +100,29 @@ int main(int argc, char* argv[])
 
 void runWindow(gui::Window& window)
 {
-    std::array<std::unique_ptr<gui::Button>, 7> buttons;
+    using namespace gui;
+
+    std::array<std::unique_ptr<Button>, 7> buttons;
 
     for (int iter = 0; iter < buttons.size(); iter++)
     {
-        buttons.at(iter) = std::make_unique<gui::Button>(window, 10,
-            30 + iter * 25, 60, 20, "hello", nullptr);
+        buttons.at(iter) = std::make_unique<Button>(window, 10, 30 + iter * 25,
+            60, 20, "hello", nullptr);
     }
 
     buttons.at(1)->activate = []{ std::cout << "[+] button clicked\n"; };
 
-    std::unique_ptr<gui::TextBox>
-        textBox(std::make_unique<gui::TextBox>(window, 200, 200, 200, 20));
+    std::unique_ptr<TextBox> textBox(std::make_unique<TextBox>(window, 200, 200,
+        200, 20));
+    Button printInput(window, 410, 200, 100, 20, "print text",
+        [&]{ std::cout << ">> " << textBox->textBuffer << '\n'; });
 
     for (;;)
     {
         float mouseX, mouseY;
         SDL_GetMouseState(&mouseX, &mouseY);
-        gui::Selectable::findFocus(mouseX, mouseY);
-        gui::Selectable* inFocus = gui::Selectable::hovered;
+        Selectable::findFocus(mouseX, mouseY);
+        Selectable* inFocus = Selectable::hovered;
 
         SDL_Event event;
         while (window.pollEvents(event))
@@ -133,21 +138,136 @@ void runWindow(gui::Window& window)
                 }
 
                 break;
+            case SDL_EVENT_KEY_DOWN:
+                if (Selectable::selected && Selectable::selected->selectType
+                    == Selectable::SelectType::TEXT_BOX)
+                {
+                    char letter = readChar(event);
+                    
+                    if (letter)
+                    {
+                        if (letter >= 'a' && letter <= 'z' &&
+                            SDL_GetModState() & SDL_KMOD_SHIFT)
+                        {
+                            letter -= 0x20;
+                        }
+
+                        static_cast<TextBox*>
+                            (Selectable::selected)->writeChar(letter);
+                    }
+                    else if (event.key.key == SDLK_BACKSPACE)
+                    {
+                        if (!static_cast<TextBox*>
+                            (Selectable::selected)->textBuffer.empty())
+                        {
+                            static_cast<TextBox*>
+                                (Selectable::selected)->eraseChar();
+                        }
+                    }
+                }
             }
         }
 
         window.clear();
 
-        double offset = std::chrono::duration_cast<std::chrono::milliseconds>
-        (std::chrono::system_clock::now().time_since_epoch()).count();
-
-        for (std::unique_ptr<gui::Button>& button : buttons)
+        for (std::unique_ptr<Button>& button : buttons)
         {
             button->draw();
         }
 
         textBox->draw();
+        printInput.draw();
 
         window.display();
+    }
+}
+
+char readChar(SDL_Event event)
+{
+    switch (std::move(event.key.key))
+    {
+    case SDLK_SPACE:
+        return ' ';
+        break;
+    case SDLK_A:
+        return 'a';
+        break;
+    case SDLK_B:
+        return 'b';
+        break;
+    case SDLK_C:
+        return 'c';
+        break;
+    case SDLK_D:
+        return 'd';
+        break;
+    case SDLK_E:
+        return 'e';
+        break;
+    case SDLK_F:
+        return 'f';
+        break;
+    case SDLK_G:
+        return 'g';
+        break;
+    case SDLK_H:
+        return 'h';
+        break;
+    case SDLK_I:
+        return 'i';
+        break;
+    case SDLK_J:
+        return 'j';
+        break;
+    case SDLK_K:
+        return 'k';
+        break;
+    case SDLK_L:
+        return 'l';
+        break;
+    case SDLK_M:
+        return 'm';
+        break;
+    case SDLK_N:
+        return 'n';
+        break;
+    case SDLK_O:
+        return 'o';
+        break;
+    case SDLK_P:
+        return 'p';
+        break;
+    case SDLK_Q:
+        return 'q';
+        break;
+    case SDLK_R:
+        return 'r';
+        break;
+    case SDLK_S:
+        return 's';
+        break;
+    case SDLK_T:
+        return 't';
+        break;
+    case SDLK_U:
+        return 'u';
+        break;
+    case SDLK_V:
+        return 'v';
+        break;
+    case SDLK_W:
+        return 'w';
+        break;
+    case SDLK_X:
+        return 'x';
+        break;
+    case SDLK_Y:
+        return 'y';
+        break;
+    case SDLK_Z:
+        return 'z';
+        break;
+    default:
+        return '\0';
     }
 }

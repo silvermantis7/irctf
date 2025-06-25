@@ -40,9 +40,9 @@ void gui::terminate()
 
 Window::Window(int width, int height, std::string title)
     : window(SDL_CreateWindow(title.c_str(), width, height, SDL_WINDOW_OPENGL))
-    , pixels(std::make_unique<std::vector<uint32_t>>(width * height))
-    , width(width)
-    , height(height)
+    , pixels{std::make_unique<std::vector<uint32_t>>(width * height)}
+    , width{width}
+    , height{height}
 {
     if (!window)
     {
@@ -101,19 +101,20 @@ bool Window::pollEvents(SDL_Event& event)
 
 Widget::Widget(Window& window, double posX, double posY, double width,
     double height)
-    : window(window)
-    , posX(posX)
-    , posY(posY)
-    , width(width)
-    , height(height) { }
+    : window{window}
+    , posX{posX}
+    , posY{posY}
+    , width{width}
+    , height{height} { }
 
 std::vector<Selectable*> Selectable::existing;
 Selectable* Selectable::hovered = nullptr;
 Selectable* Selectable::selected = nullptr;
 
 Selectable::Selectable(Window& window, double posX, double posY, double width,
-    double height)
+    double height, SelectType selectType)
     : Widget(window, posX, posY, width, height)
+    , selectType{selectType}
 {
     existing.push_back(this);
 }
@@ -142,9 +143,9 @@ void Selectable::findFocus(double mouseX, double mouseY)
 
 Button::Button(Window& window, double posX, double posY, double width,
     double height, std::string label, std::function<void()> activate)
-    : Selectable(window, posX, posY, width, height)
-    , label(label)
-    , activate(std::move(activate)) { }
+    : Selectable(window, posX, posY, width, height, SelectType::BUTTON)
+    , label{label}
+    , activate{std::move(activate)} { }
 
 void Button::draw()
 {
@@ -184,7 +185,8 @@ void Button::draw(bool highlight)
 }
 
 TextBox::TextBox(Window& window, double posX, double posY, double width,
-    double height) : Selectable(window, posX, posY, width, height) { }
+    double height)
+    : Selectable(window, posX, posY, width, height, SelectType::TEXT_BOX) { }
 
 void TextBox::draw()
 {
@@ -230,4 +232,14 @@ void TextBox::draw(bool highlight)
 void TextBox::select()
 {
     selected = this;
+}
+
+void TextBox::writeChar(char input)
+{
+    textBuffer += std::move(input);
+}
+
+void TextBox::eraseChar()
+{
+    textBuffer.pop_back();
 }

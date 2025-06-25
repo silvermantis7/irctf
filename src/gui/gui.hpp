@@ -34,7 +34,7 @@ namespace gui
         SDL_Texture* texture;
         std::unique_ptr<std::vector<uint32_t>> pixels;
         BLImage blImage;
-        public:
+    public:
         Window(int width, int height, std::string title);
         ~Window();
         BLContext blContext;
@@ -61,10 +61,10 @@ namespace gui
     {
         static std::vector<Selectable*> existing;
     public:
-        enum SelectTypes { NONE, BUTTON, TEXT_BOX };
-        SelectTypes selectType = NONE;
+        enum SelectType { NONE, BUTTON, TEXT_BOX };
+        SelectType selectType;
         Selectable(Window& window, double posX, double posY, double width,
-            double height);
+            double height, SelectType selectType = SelectType::NONE);
         ~Selectable();
 
         static void findFocus(double mouseX, double mouseY);
@@ -77,7 +77,6 @@ namespace gui
     {
         std::string label;
     public:
-        SelectTypes selectType = SelectTypes::BUTTON;
         std::function<void()> activate;
         BLRgba32 bgColor = BLRgba32(0xff454662);
         BLRgba32 borderColor = BLRgba32(0xff686881);
@@ -94,10 +93,9 @@ namespace gui
     class TextBox : public Selectable
     {
     public:
-        SelectTypes selectType = SelectTypes::TEXT_BOX;
         TextBox(Window& window, double posX, double posY, double width,
             double height);
-        std::string textBuffer = "changeme"; // TODO: change
+        std::string textBuffer;
         void draw() override;
         void draw(bool highlight);
         BLRgba32 bgColor = BLRgba32(0xff000000);
@@ -106,6 +104,8 @@ namespace gui
         BLRgba32 textColor = BLRgba32(0xffffffff);
 
         void select() override;
+        void writeChar(char input);
+        void eraseChar();
     };
 
     static BLFont blFont;
