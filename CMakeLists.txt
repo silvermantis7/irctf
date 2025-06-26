@@ -14,7 +14,7 @@ set(BLEND2D_NO_JIT TRUE)
 include("${BLEND2D_DIR}/CMakeLists.txt")
 
 add_executable(irctf src/irctf.cpp src/irc/network.cpp src/irc/responses.cpp
-    src/gui/gui.cpp)
+    src/gui/gui.cpp src/gui/readchar.cpp)
 target_link_libraries(irctf blend2d::blend2d SDL3)
 
 IF (NOT WIN32)

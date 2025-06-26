@@ -45,8 +45,6 @@ struct ResponseVisitor
 };
 
 void runWindow(gui::Window& window);
-char readChar(SDL_Event event);
-char shiftTransform(char letter);
 
 int main(int argc, char* argv[])
 {
@@ -146,15 +144,11 @@ void runWindow(gui::Window& window)
                 if (Selectable::selected && Selectable::selected->selectType
                     == Selectable::SelectType::TEXT_BOX)
                 {
-                    char letter = readChar(event);
+                    char letter = gui::readChar(event, SDL_GetModState()
+                        & SDL_KMOD_SHIFT);
                     
                     if (letter)
                     {
-                        if (SDL_GetModState() & SDL_KMOD_SHIFT)
-                        {
-                            letter = shiftTransform(letter);
-                        }
-
                         static_cast<TextBox*>
                             (Selectable::selected)->writeChar(letter);
                     }
@@ -182,168 +176,5 @@ void runWindow(gui::Window& window)
         messageDisplay->draw();
 
         window.display();
-    }
-}
-
-char readChar(SDL_Event event)
-{
-    switch (std::move(event.key.key))
-    {
-    case SDLK_SPACE:
-        return ' ';
-    case SDLK_A:
-        return 'a';
-    case SDLK_B:
-        return 'b';
-    case SDLK_C:
-        return 'c';
-    case SDLK_D:
-        return 'd';
-    case SDLK_E:
-        return 'e';
-    case SDLK_F:
-        return 'f';
-    case SDLK_G:
-        return 'g';
-    case SDLK_H:
-        return 'h';
-    case SDLK_I:
-        return 'i';
-    case SDLK_J:
-        return 'j';
-    case SDLK_K:
-        return 'k';
-    case SDLK_L:
-        return 'l';
-    case SDLK_M:
-        return 'm';
-    case SDLK_N:
-        return 'n';
-    case SDLK_O:
-        return 'o';
-    case SDLK_P:
-        return 'p';
-    case SDLK_Q:
-        return 'q';
-    case SDLK_R:
-        return 'r';
-    case SDLK_S:
-        return 's';
-    case SDLK_T:
-        return 't';
-    case SDLK_U:
-        return 'u';
-    case SDLK_V:
-        return 'v';
-    case SDLK_W:
-        return 'w';
-    case SDLK_X:
-        return 'x';
-    case SDLK_Y:
-        return 'y';
-    case SDLK_Z:
-        return 'z';
-    case SDLK_1:
-        return '1';
-    case SDLK_2:
-        return '2';
-    case SDLK_3:
-        return '3';
-    case SDLK_4:
-        return '4';
-    case SDLK_5:
-        return '5';
-    case SDLK_6:
-        return '6';
-    case SDLK_7:
-        return '7';
-    case SDLK_8:
-        return '8';
-    case SDLK_9:
-        return '9';
-    case SDLK_0:
-        return '0';
-    case SDLK_APOSTROPHE:
-        return '\'';
-    case SDLK_COMMA:
-        return ',';
-    case SDLK_MINUS:
-        return '-';
-    case SDLK_PERIOD:
-        return '.';
-    case SDLK_SLASH:
-        return '/';
-    case SDLK_SEMICOLON:
-        return ';';
-    case SDLK_EQUALS:
-        return '=';
-    case SDLK_LEFTBRACE:
-        return '[';
-    case SDLK_BACKSLASH:
-        return '\\';
-    case SDLK_RIGHTBRACE:
-        return ']';
-    case SDLK_GRAVE:
-        return '`';
-    default:
-        return '\0';
-    }
-}
-
-char shiftTransform(char letter)
-{
-    if (letter >= 'a' && letter <= 'z')
-    {
-        return letter - 0x20;
-    }
-    else
-    {
-        switch (letter)
-        {
-        case '1':
-            return '!';
-        case '2':
-            return '@';
-        case '3':
-            return '#';
-        case '4':
-            return '$';
-        case '5':
-            return '%';
-        case '6':
-            return '^';
-        case '7':
-            return '&';
-        case '8':
-            return '*';
-        case '9':
-            return '(';
-        case '0':
-            return ')';
-        case '\'':
-            return '"';
-        case ',':
-            return '<';
-        case '-':
-            return '_';
-        case '.':
-            return '>';
-        case '/':
-            return '?';
-        case ';':
-            return ':';
-        case '=':
-            return '+';
-        case '[':
-            return '{';
-        case '\\':
-            return '|';
-        case ']':
-            return '}';
-        case '`':
-            return '~';
-        default:
-            return letter;
-        }
     }
 }

@@ -14,6 +14,8 @@ namespace gui
     class Widget;
     class Selectable;
     class Button;
+    class TextBox;
+    class MessageDisplay;
 
     class GuiError : public std::exception
     {
@@ -128,4 +130,6 @@ namespace gui
 
     static BLFont blFont;
     static BLFontFace blFontFace;
+
+    char readChar(SDL_Event event, bool shiftKey);
 }
