@@ -6,6 +6,10 @@
 #include <cstdlib>
 #include <ctime>
 
+#ifndef _WIN32
+#include <fontconfig/fontconfig.h>
+#endif
+
 using namespace gui;
 
 GuiError::GuiError(std::string message) : message(message) { }
@@ -22,10 +26,29 @@ void gui::init()
         throw GuiError("failed to initialize SDL");
     }
 
-    BLResult result = gui::blFontFace.createFromFile(
-        "C:\\Windows\\Fonts\\Arial.ttf");
+    #ifdef _WIN32
+    std::string fontPath = "C:\\Windows\\Fonts\\Arial.ttf";
+    #else
+    FcPattern* fcPattern = FcPatternCreate();
+    FcPatternAddString(fcPattern, FC_FAMILY, (const FcChar8*)"Noto Serif");
+    FcPatternAddString(fcPattern, FC_STYLE, (const FcChar8*)"Regular");
+    FcResult fcResult;
+    FcPattern* fcMatch = FcFontMatch(0, fcPattern, &fcResult);
+    FcChar8* fontfile = nullptr;
+    if (!fcMatch || !FcPatternGetString(fcMatch, FC_FILE, 0, &fontfile)
+        == FcResultMatch || !fontfile)
+    {
+        throw GuiError("failed to locate font");
+    }
+    std::string fontPath = (char*)fontfile;
+    FcPatternDestroy(fcPattern);
+    FcPatternDestroy(fcMatch);
+    #endif
+
+    BLResult fontLoadResult =
+        gui::blFontFace.createFromFile(std::move(fontPath.c_str()));
     
-    if (result != BL_SUCCESS)
+    if (fontLoadResult != BL_SUCCESS)
     {
         throw GuiError("failed to load font");
     }

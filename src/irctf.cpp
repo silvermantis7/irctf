@@ -62,6 +62,7 @@ int main(int argc, char* argv[])
     catch (std::exception& e)
     {
         std::cerr << "GUI error: " << e.what() << '\n';
+        std::exit(-1);
     }
 
     runWindow(*window);

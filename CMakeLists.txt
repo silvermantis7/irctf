@@ -16,3 +16,7 @@ include("${BLEND2D_DIR}/CMakeLists.txt")
 add_executable(irctf src/irctf.cpp src/irc/network.cpp src/irc/responses.cpp
     src/gui/gui.cpp)
 target_link_libraries(irctf blend2d::blend2d SDL3)
+
+IF (NOT WIN32)
+    target_link_libraries(irctf fontconfig)
+ENDIF()
