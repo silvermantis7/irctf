@@ -5,6 +5,7 @@
 #include <SDL3/SDL.h>
 #include <vector>
 #include <functional>
+#include "../irc/network.hpp"
 
 namespace gui
 {
@@ -106,6 +107,23 @@ namespace gui
         void select() override;
         void writeChar(char input);
         void eraseChar();
+    };
+
+    class MessageDisplay : public Widget
+    {
+        // time logged, nick, message
+        typedef std::tuple<std::time_t, std::string, std::string> Message;
+        std::vector<Message> messages;
+    public:
+        MessageDisplay(Window& window, double posX, double posY, double width,
+            double height);
+        BLRgba32 bgColor = BLRgba32(0xff000000);
+        BLRgba32 highlightColor = BLRgba32(0xff404040);
+        BLRgba32 borderColor = BLRgba32(0xffffffff);
+        BLRgba32 textColor = BLRgba32(0xffffffff);
+
+        void draw() override;
+        void logMessage(Message message);
     };
 
     static BLFont blFont;

@@ -266,3 +266,32 @@ void TextBox::eraseChar()
 {
     textBuffer.pop_back();
 }
+
+MessageDisplay::MessageDisplay(Window& window, double posX, double posY,
+    double width, double height) : Widget(window, posX, posY, width, height) { }
+
+void MessageDisplay::draw()
+{
+    BLRoundRect roundRect(posX, posY, width, height, 5);
+    window.blContext.fillRoundRect(roundRect, bgColor);
+    window.blContext.setStrokeWidth(1.f);
+    window.blContext.strokeRoundRect(roundRect, borderColor);
+
+    int offsetX = 20;
+    int offsetY = 20;
+
+    window.blContext.setFillStyle(textColor);
+
+    for (Message message : messages)
+    {
+        window.blContext.fillUtf8Text(BLPoint(posX + offsetX, posY + offsetY),
+            blFont, ('<' + std::get<1>(message) + "> "
+            + std::get<2>(message)).c_str());
+        offsetY += blFont.size() + 2;
+    }
+}
+
+void MessageDisplay::logMessage(Message message)
+{
+    messages.push_back(std::move(message));
+}

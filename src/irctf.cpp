@@ -103,20 +103,22 @@ void runWindow(gui::Window& window)
 {
     using namespace gui;
 
-    std::array<std::unique_ptr<Button>, 7> buttons;
+    std::unique_ptr<TextBox> textBox{std::make_unique<TextBox>(window, 20, 570,
+        650, 20)};
+    std::unique_ptr<MessageDisplay> messageDisplay{
+        std::make_unique<MessageDisplay>(window, 20, 20, 760, 520)};
 
-    for (int iter = 0; iter < buttons.size(); iter++)
+    std::function<void()> printInput = [&]
     {
-        buttons.at(iter) = std::make_unique<Button>(window, 10, 30 + iter * 25,
-            60, 20, "hello", nullptr);
-    }
+        if (!textBox->textBuffer.empty())
+        {
+            messageDisplay->logMessage({1234, "nick", textBox->textBuffer});
+            textBox->textBuffer.clear();
+        }
+    };
 
-    buttons.at(1)->activate = []{ std::cout << "[+] button clicked\n"; };
-
-    std::unique_ptr<TextBox> textBox(std::make_unique<TextBox>(window, 200, 200,
-        200, 20));
-    Button printInput(window, 410, 200, 100, 20, "print text",
-        [&]{ std::cout << ">> " << textBox->textBuffer << '\n'; });
+    std::unique_ptr<Button> printButton{std::make_unique<Button>(window, 680,
+        570, 100, 20, "send", printInput)};
 
     for (;;)
     {
@@ -165,19 +167,19 @@ void runWindow(gui::Window& window)
                                 (Selectable::selected)->eraseChar();
                         }
                     }
+                    else if (event.key.key == SDLK_RETURN)
+                    {
+                        printButton->activate();
+                    }
                 }
             }
         }
 
         window.clear();
 
-        for (std::unique_ptr<Button>& button : buttons)
-        {
-            button->draw();
-        }
-
         textBox->draw();
-        printInput.draw();
+        printButton->draw();
+        messageDisplay->draw();
 
         window.display();
     }
