@@ -223,30 +223,40 @@ void TextBox::draw(bool highlight)
     window.blContext.setStrokeWidth(1.f);
     window.blContext.strokeRect(rect, borderColor);
 
-	int lineX = posX + 3;
+	int textStartX = posX + 3;
+	int textEndX = textStartX;
 
 	// draw text if any
     if (!textBuffer.empty())
     {
         BLGlyphBuffer glyphBuffer;
-        BLTextMetrics textMetrics;
         glyphBuffer.setUtf8Text(textBuffer.c_str());
         blFont.shape(glyphBuffer);
+        BLTextMetrics textMetrics;
         blFont.getTextMetrics(glyphBuffer, textMetrics);
+
+        textEndX += textMetrics.advance.x;
+
+        double overflowWidth = textEndX - (posX + width - 16);
+        if (overflowWidth > 0)
+        {
+            textStartX -= overflowWidth;
+            textEndX -= overflowWidth;
+        }
+
         double textWidth = textMetrics.boundingBox.x1
             - textMetrics.boundingBox.x0;
         double textHeight = blFont.metrics().ascent - blFont.metrics().descent;
         window.blContext.setFillStyle(textColor);
-        window.blContext.fillUtf8Text(BLPoint(posX + 3,
-            posY + height - (height - textHeight) / 2.f), blFont,
-            textBuffer.c_str());
-
-		lineX += textMetrics.advance.x;
+        window.blContext.clipToRect(BLRect(posX, posY, width, height));
+        window.blContext.fillUtf8Text(BLPoint(textStartX, posY + height -
+            (height - textHeight) / 2.f), blFont, textBuffer.c_str());
+        window.blContext.restoreClipping();
 	}
     
     if (selected == this)
     {
-        BLLine cursor = BLLine(lineX, posY + height - 3, lineX + 10,
+        BLLine cursor = BLLine(textEndX + 3, posY + height - 3, textEndX + 13,
             posY + height - 3);
         window.blContext.strokeLine(cursor, textColor);
     }
