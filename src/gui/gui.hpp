@@ -6,6 +6,7 @@
 #include <vector>
 #include <functional>
 #include "../irc/network.hpp"
+#include <chrono>
 
 namespace gui
 {
@@ -116,6 +117,8 @@ namespace gui
         // time logged, nick, message
         typedef std::tuple<std::time_t, std::string, std::string> Message;
         std::vector<Message> messages;
+        double nickPosX = 0;
+        double msgPosX = 0;
     public:
         MessageDisplay(Window& window, double posX, double posY, double width,
             double height);

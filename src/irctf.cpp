@@ -111,7 +111,8 @@ void runWindow(gui::Window& window)
     {
         if (!textBox->textBuffer.empty())
         {
-            messageDisplay->logMessage({1234, "nick", textBox->textBuffer});
+            messageDisplay->logMessage({std::time(nullptr), "nick",
+                textBox->textBuffer});
             textBox->textBuffer.clear();
         }
     };

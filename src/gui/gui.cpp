@@ -287,16 +287,54 @@ void MessageDisplay::draw()
     window.blContext.setStrokeWidth(1.f);
     window.blContext.strokeRoundRect(roundRect, borderColor);
 
-    int offsetX = 20;
+    int offsetX = 10;
     int offsetY = 20;
 
     window.blContext.setFillStyle(textColor);
 
     for (Message message : messages)
     {
+        tm* timeInfo = localtime(&std::get<0>(message));
+        std::string msgText('[' + std::to_string(timeInfo->tm_hour) + ':' +
+            std::to_string(timeInfo->tm_min) + ':' +
+            std::to_string(timeInfo->tm_sec) + ']');
+        BLGlyphBuffer glyphBuffer;
+        glyphBuffer.setUtf8Text(msgText.c_str());
+        blFont.shape(glyphBuffer);
+        BLTextMetrics textMetrics;
+        blFont.getTextMetrics(glyphBuffer, textMetrics);
+
         window.blContext.fillUtf8Text(BLPoint(posX + offsetX, posY + offsetY),
-            blFont, ('<' + std::get<1>(message) + "> "
-            + std::get<2>(message)).c_str());
+            blFont, msgText.c_str());
+
+        double nextPosXCandidate = posX + offsetX + textMetrics.advance.x + 10;
+
+        if (nextPosXCandidate > nickPosX)
+        {
+            nickPosX = nextPosXCandidate;
+        }
+        else
+        {
+            nextPosXCandidate = nickPosX;
+        }
+
+        msgText = std::string('<' + std::get<1>(message) + '>');
+        glyphBuffer.setUtf8Text(msgText.c_str());
+        blFont.getTextMetrics(glyphBuffer, textMetrics);
+
+        window.blContext.fillUtf8Text(BLPoint(nickPosX, posY + offsetY),
+            blFont, msgText.c_str());
+
+        nextPosXCandidate += textMetrics.advance.x + 10;
+
+        if (nextPosXCandidate > msgPosX)
+        {
+            msgPosX = nextPosXCandidate;
+        }
+
+        window.blContext.fillUtf8Text(BLPoint(msgPosX, posY + offsetY),
+            blFont, std::get<2>(message).c_str());
+
         offsetY += blFont.size() + 2;
     }
 }
