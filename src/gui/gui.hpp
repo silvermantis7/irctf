@@ -5,8 +5,7 @@
 #include <SDL3/SDL.h>
 #include <vector>
 #include <functional>
-#include "../irc/network.hpp"
-#include <chrono>
+#include <ctime>
 
 namespace gui
 {
@@ -120,6 +119,7 @@ namespace gui
         double nickPosX = 0;
         double msgPosX = 0;
     public:
+        double scrollPercent = 1;
         MessageDisplay(Window& window, double posX, double posY, double width,
             double height);
         BLRgba32 bgColor = BLRgba32(0xff000000);
@@ -129,6 +129,7 @@ namespace gui
 
         void draw() override;
         void logMessage(Message message);
+        void scroll(double distance);
     };
 
     static BLFont blFont;

@@ -1,4 +1,5 @@
 #include "gui.hpp"
+#include "blend2d/geometry.h"
 #include <SDL3/SDL.h>
 #include <algorithm>
 #include <blend2d.h>
@@ -35,8 +36,8 @@ void gui::init()
     FcResult fcResult;
     FcPattern* fcMatch = FcFontMatch(0, fcPattern, &fcResult);
     FcChar8* fontfile = nullptr;
-    if (!fcMatch || !FcPatternGetString(fcMatch, FC_FILE, 0, &fontfile)
-        == FcResultMatch || !fontfile)
+    if (!fcMatch || FcPatternGetString(fcMatch, FC_FILE, 0, &fontfile)
+        != FcResultMatch || !fontfile)
     {
         throw GuiError("failed to locate font");
     }
@@ -198,10 +199,10 @@ void Button::draw(bool highlight)
     glyphBuffer.setUtf8Text(label.c_str());
     blFont.shape(glyphBuffer);
     blFont.getTextMetrics(glyphBuffer, textMetrics);
-    
+
     double textWidth = textMetrics.boundingBox.x1 - textMetrics.boundingBox.x0;
     double textHeight = blFont.metrics().ascent - blFont.metrics().descent;
-    
+
     window.blContext.setFillStyle(textColor);
     window.blContext.fillUtf8Text(BLPoint(posX + width / 2.f - textWidth / 2.f,
         posY + height - (height - textHeight) / 2.f), blFont, label.c_str());
@@ -223,10 +224,10 @@ void TextBox::draw(bool highlight)
     window.blContext.setStrokeWidth(1.f);
     window.blContext.strokeRect(rect, borderColor);
 
-	int textStartX = posX + 3;
-	int textEndX = textStartX;
+    int textStartX = posX + 3;
+    int textEndX = textStartX;
 
-	// draw text if any
+    // draw text if any
     if (!textBuffer.empty())
     {
         BLGlyphBuffer glyphBuffer;
@@ -252,7 +253,7 @@ void TextBox::draw(bool highlight)
         window.blContext.fillUtf8Text(BLPoint(textStartX, posY + height -
             (height - textHeight) / 2.f), blFont, textBuffer.c_str());
         window.blContext.restoreClipping();
-	}
+    }
     
     if (selected == this)
     {
@@ -277,7 +278,7 @@ void TextBox::eraseChar()
     textBuffer.pop_back();
 }
 
-MessageDisplay::MessageDisplay(Window& window, double posX, double posY,
+MessageDisplay::MessageDisplay(Window &window, double posX, double posY,
     double width, double height) : Widget(window, posX, posY, width, height) { }
 
 void MessageDisplay::draw()
@@ -287,12 +288,27 @@ void MessageDisplay::draw()
     window.blContext.setStrokeWidth(1.f);
     window.blContext.strokeRoundRect(roundRect, borderColor);
 
-    int offsetX = 10;
-    int offsetY = 20;
+    const double lineHeight = blFont.size() + 2;
+
+    double offsetX = 10;
+    double offsetY = lineHeight;
+    const double maxMessagesVisible = (height - lineHeight) / lineHeight;
+    double messagesScrolled = (messages.size() - maxMessagesVisible) *
+        scrollPercent;
+    offsetY -= std::fmod(messagesScrolled, 1) * lineHeight;
+
+    if (messagesScrolled < 0)
+    {
+        messagesScrolled = 0;
+    }
+
+    bool drawScrollbar = false;
 
     window.blContext.setFillStyle(textColor);
+    window.blContext.clipToRect(BLRect(posX, posY, width, height));
 
-    for (Message message : messages)
+    for (Message message : std::vector(messages.begin() +
+        std::floor(messagesScrolled), messages.end()))
     {
         tm* timeInfo = localtime(&std::get<0>(message));
         std::string msgText('[' + std::to_string(timeInfo->tm_hour) + ':' +
@@ -322,8 +338,8 @@ void MessageDisplay::draw()
         glyphBuffer.setUtf8Text(msgText.c_str());
         blFont.getTextMetrics(glyphBuffer, textMetrics);
 
-        window.blContext.fillUtf8Text(BLPoint(nickPosX, posY + offsetY),
-            blFont, msgText.c_str());
+        window.blContext.fillUtf8Text(BLPoint(nickPosX, posY + offsetY), blFont,
+            msgText.c_str());
 
         nextPosXCandidate += textMetrics.advance.x + 10;
 
@@ -332,14 +348,56 @@ void MessageDisplay::draw()
             msgPosX = nextPosXCandidate;
         }
 
-        window.blContext.fillUtf8Text(BLPoint(msgPosX, posY + offsetY),
-            blFont, std::get<2>(message).c_str());
+        window.blContext.fillUtf8Text(BLPoint(msgPosX, posY + offsetY), blFont,
+            std::get<2>(message).c_str());
 
-        offsetY += blFont.size() + 2;
+        if (offsetY + lineHeight >= posY + height)
+        {
+            break;
+        }
+
+        offsetY += lineHeight;
     }
+
+    if (messages.size() > std::floor(maxMessagesVisible))
+    {
+        double scrollbarLen = height * maxMessagesVisible /
+            (double)messages.size();
+        double scrollPosY = posY + scrollPercent * (height - scrollbarLen);
+        BLLine scrollLine(posX + width - 7, scrollPosY, posX + width - 7,
+            scrollPosY + scrollbarLen);
+        window.blContext.setStrokeWidth(5);
+        window.blContext.strokeLine(scrollLine, textColor);
+    }
+
+    window.blContext.restoreClipping();
 }
 
 void MessageDisplay::logMessage(Message message)
 {
     messages.push_back(std::move(message));
+}
+
+void MessageDisplay::scroll(double distance)
+{
+    const double lineHeight = blFont.size() + 2;
+    const double maxMessagesVisible = (height - lineHeight) / lineHeight;
+    const double scrollableDistance = ((double)messages.size() -
+        maxMessagesVisible) * lineHeight;
+
+    if (scrollableDistance <= 0)
+    {
+        return;
+    }
+
+    scrollPercent += distance / scrollableDistance;
+
+    if (scrollPercent < 0)
+    {
+        scrollPercent = 0;
+    }
+    else if (scrollPercent > 1)
+    {
+        scrollPercent = 1;
+    }
 }

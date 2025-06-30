@@ -1,6 +1,3 @@
-#include <algorithm>
-#include <array>
-#include <chrono>
 #include <iostream>
 #include <memory>
 // #include <variant>
@@ -166,6 +163,15 @@ void runWindow(gui::Window& window)
                     {
                         printButton->activate();
                     }
+                }
+
+                if (event.key.key == SDLK_PAGEUP)
+                {
+                    messageDisplay->scroll(-100);
+                }
+                else if (event.key.key == SDLK_PAGEDOWN)
+                {
+                    messageDisplay->scroll(100);
                 }
             }
         }
