@@ -1,10 +1,10 @@
 #include "gui.hpp"
 
-char gui::readChar(SDL_Event event, bool shiftKey)
+char gui::readChar(const SDL_Event& event, bool shiftKey)
 {
     char letter = '\0';
 
-    switch (std::move(event.key.key))
+    switch (event.key.key)
     {
     case SDLK_SPACE:
         letter = ' ';

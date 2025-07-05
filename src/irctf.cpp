@@ -64,33 +64,35 @@ int main(int argc, char* argv[])
     runWindow(*window);
     gui::terminate();
 
-    // try
-    // {
-    //     irc::Server server = irc::Server("localhost", "6667");
-    //     ResponseVisitor rVisit(server);
+    std::unique_ptr<irc::Server> server;
 
-    //     server.connect();
-    //     server.nick("silvermantis");
-    //     server.auth("silvermantis", "James");
-    //     server.join("#test");
+    try
+    {
+        server = std::make_unique<irc::Server>("localhost", "6667");
+        ResponseVisitor rVisit(*server);
 
-    //     for (;;)
-    //     {
-    //         std::cout << "[+] reading responses...\n";
+        server->connect();
+        server->nick("silvermantis");
+        server->auth("silvermantis", "James");
+        server->join("#test");
 
-    //         for (irc::response::responseVarient response : server.fetch())
-    //         {
-    //             std::visit(rVisit, response);
-    //         }
-    //     }
+        for (;;)
+        {
+            std::cout << "[+] reading responses...\n";
 
-    //     server.quit();
-    // }
-    // catch (std::exception& e)
-    // {
-    //     std::cerr << "[!] IRC network error: " << e.what() << '\n';
-    //     return -1;
-    // }
+            for (irc::response::responseVarient response : server->fetch())
+            {
+                std::visit(rVisit, response);
+            }
+        }
+
+        server->quit();
+    }
+    catch (std::exception& e)
+    {
+        std::cerr << "[!] IRC network error: " << e.what() << '\n';
+        return -1;
+    }
 
     return 0;
 }
@@ -115,7 +117,8 @@ void runWindow(gui::Window& window)
     };
 
     std::unique_ptr<Button> printButton{std::make_unique<Button>(window, 680,
-        570, 100, 20, "send", printInput)};
+        570, 100, 20, "send", std::move(printInput))};
+    printInput = nullptr;
 
     for (;;)
     {

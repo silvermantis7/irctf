@@ -87,7 +87,7 @@ namespace gui
 
         void draw(bool highlight);
         Button(Window& window, double posX, double posY, double width,
-            double height, std::string label, std::function<void()> activate);
+            double height, std::string label, std::function<void()>&& activate);
         void draw() override;
 
         void select() override;
@@ -135,5 +135,5 @@ namespace gui
     static BLFont blFont;
     static BLFontFace blFontFace;
 
-    char readChar(SDL_Event event, bool shiftKey);
+    char readChar(const SDL_Event& event, bool shiftKey);
 }

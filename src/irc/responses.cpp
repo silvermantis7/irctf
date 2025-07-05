@@ -19,10 +19,9 @@ ParseError::ParseError(std::string error, std::vector<std::string>& words)
         return;
     }
 
-    std::string wordsStr;
-    wordsStr = std::accumulate(std::next(this->words.begin()),
-        this->words.end(), this->words.at(0), [](std::string acc,
-        std::string next) { return acc + ", " + next; });
+    std::string wordsStr{std::accumulate(std::next(this->words.begin()),
+        this->words.end(), this->words.at(0), [](std::string acc, std::string
+        next) { return acc + ", " + next; })};
     this->error += " : { " + std::move(wordsStr) + " }";
 }
 

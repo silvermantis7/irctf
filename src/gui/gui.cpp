@@ -47,8 +47,7 @@ void gui::init()
     FcPatternDestroy(fcMatch);
     #endif
 
-    BLResult fontLoadResult =
-        gui::blFontFace.createFromFile(std::move(fontPath.c_str()));
+    BLResult fontLoadResult = gui::blFontFace.createFromFile(fontPath.c_str());
     
     if (fontLoadResult != BL_SUCCESS)
     {
@@ -167,10 +166,10 @@ void Selectable::findFocus(double mouseX, double mouseY)
 }
 
 Button::Button(Window& window, double posX, double posY, double width,
-    double height, std::string label, std::function<void()> activate)
+    double height, std::string label, std::function<void()>&& activate)
     : Selectable(window, posX, posY, width, height, SelectType::BUTTON)
     , label{label}
-    , activate{std::move(activate)} { }
+    , activate{activate} { }
 
 void Button::draw()
 {
@@ -271,7 +270,7 @@ void TextBox::select()
 
 void TextBox::writeChar(char input)
 {
-    textBuffer += std::move(input);
+    textBuffer += input;
 }
 
 void TextBox::eraseChar()
