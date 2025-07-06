@@ -1,6 +1,5 @@
 #include <iostream>
 #include <memory>
-// #include <variant>
 #include "irc/network.hpp"
 #include "gui/gui.hpp"
 #include <math.h>
@@ -103,14 +102,14 @@ void runWindow(gui::Window& window)
 
     std::unique_ptr<TextBox> textBox{std::make_unique<TextBox>(window, 20, 570,
         650, 20)};
-    std::unique_ptr<MessageDisplay> messageDisplay{
-        std::make_unique<MessageDisplay>(window, 20, 20, 760, 520)};
+    std::unique_ptr<TabBar> tabBar{std::make_unique<TabBar>(window, 20, 15, 760,
+        25)};
 
     std::function<void()> printInput = [&]
     {
-        if (!textBox->textBuffer.empty())
+        if (tabBar->activeTab && !textBox->textBuffer.empty())
         {
-            messageDisplay->logMessage({std::time(nullptr), "nick",
+            tabBar->activeTab->second.logMessage({std::time(nullptr), "nick",
                 textBox->textBuffer});
             textBox->textBuffer.clear();
         }
@@ -168,13 +167,13 @@ void runWindow(gui::Window& window)
                     }
                 }
 
-                if (event.key.key == SDLK_PAGEUP)
+                if (event.key.key == SDLK_PAGEUP && tabBar->activeTab)
                 {
-                    messageDisplay->scroll(-100);
+                    tabBar->activeTab->second.scroll(-100);
                 }
-                else if (event.key.key == SDLK_PAGEDOWN)
+                else if (event.key.key == SDLK_PAGEDOWN && tabBar->activeTab)
                 {
-                    messageDisplay->scroll(100);
+                    tabBar->activeTab->second.scroll(100);
                 }
             }
         }
@@ -183,7 +182,7 @@ void runWindow(gui::Window& window)
 
         textBox->draw();
         printButton->draw();
-        messageDisplay->draw();
+        tabBar->draw();
 
         window.display();
     }

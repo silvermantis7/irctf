@@ -16,6 +16,8 @@ namespace gui
     class Button;
     class TextBox;
     class MessageDisplay;
+    class Tab;
+    class TabBar;
 
     class GuiError : public std::exception
     {
@@ -113,8 +115,10 @@ namespace gui
 
     class MessageDisplay : public Widget
     {
+    public:
         // time logged, nick, message
         typedef std::tuple<std::time_t, std::string, std::string> Message;
+    private:
         std::vector<Message> messages;
         double nickPosX = 0;
         double msgPosX = 0;
@@ -130,6 +134,34 @@ namespace gui
         void draw() override;
         void logMessage(Message message);
         void scroll(double distance);
+    };
+
+    class Tab : public Selectable
+    {
+        double tabHeight;
+        std::string name;
+        TabBar& tabBar;
+    public:
+        BLRgba32 bgColor = BLRgba32(0xff454662);
+        BLRgba32 borderColor = BLRgba32(0xff686881);
+        BLRgba32 textColor = BLRgba32(0xffffffff);
+        Tab(Window& window, double posX, double posY, double width, double
+            height, std::string name, TabBar& tabBar);
+        void draw() override;
+        void select() override;
+    };
+
+    class TabBar : public Widget
+    {
+    public:
+        std::pair<std::unique_ptr<Tab>, MessageDisplay>* activeTab = nullptr;
+        std::unordered_map<std::string, std::pair<std::unique_ptr<Tab>,
+            MessageDisplay>> messageDisplays;
+        TabBar(Window& window, double posX, double posY, double width, double
+            height);
+
+        void draw() override;
+        void addChannel(const std::string& name);
     };
 
     static BLFont blFont;

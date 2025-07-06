@@ -48,12 +48,12 @@ void gui::init()
     #endif
 
     BLResult fontLoadResult = gui::blFontFace.createFromFile(fontPath.c_str());
-    
+
     if (fontLoadResult != BL_SUCCESS)
     {
         throw GuiError("failed to load font");
     }
-    
+
     blFont.createFromFace(blFontFace, 15.f);
 }
 
@@ -478,4 +478,69 @@ void MessageDisplay::scroll(double distance)
     {
         scrollPercent = 1;
     }
+}
+
+Tab::Tab(Window& window, double posX, double posY, double width, double height,
+    std::string name, TabBar& tabBar)
+    : Selectable(window, posX, posY, width, height)
+    , name{name}
+    , tabBar{tabBar} { }
+
+void Tab::draw()
+{
+    BLRoundRect roundRect{posX, posY, width, height + 5, 10};
+    window.blContext.clipToRect(BLRect(posX, posY, width, height));
+
+    window.blContext.fillRoundRect(roundRect, bgColor);
+    window.blContext.setStrokeWidth(1);
+    window.blContext.strokeRoundRect(roundRect, borderColor);
+
+    BLGlyphBuffer glyphBuffer;
+    BLTextMetrics textMetrics;
+    blFont.shape(glyphBuffer);
+    glyphBuffer.setUtf8Text(name.c_str());
+    blFont.getTextMetrics(glyphBuffer, textMetrics);
+
+    BLPoint textPos{(width - textMetrics.advance.x) / 2 + posX, posY + height -
+        (height - blFont.size()) / 2 - 2};
+    window.blContext.fillUtf8Text(textPos, blFont, name.c_str());
+
+    window.blContext.restoreClipping();
+}
+
+void Tab::select()
+{
+    try
+    {
+        tabBar.activeTab = &tabBar.messageDisplays.at(name);
+    }
+    catch (std::exception& e)
+    {
+        tabBar.activeTab = nullptr;
+    }
+}
+
+TabBar::TabBar(Window& window, double posX, double posY, double width, double
+    height) : Widget(window, posX, posY, width, height)
+{
+    addChannel("global");
+    activeTab = &messageDisplays.at("global");
+}
+
+void TabBar::draw()
+{
+    std::for_each(messageDisplays.begin(), messageDisplays.end(), [&](auto& x){
+        x.second.first->draw(); });
+
+    if (activeTab)
+    {
+        activeTab->second.draw();
+    }
+}
+
+void TabBar::addChannel(const std::string& name)
+{
+    messageDisplays.emplace(name, std::make_pair(std::make_unique<Tab>(window,
+        posX + 5, posY, 100, height, name, *this), MessageDisplay(window, posX,
+        posY + height, width, 500)));
 }
