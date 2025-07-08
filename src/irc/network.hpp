@@ -226,7 +226,12 @@ namespace irc
         tcp::resolver resolver;
         tcp::resolver::results_type endpoints;
         tcp::socket socket;
- 
+        std::vector<response::responseVarient> responseQueue;
+        void queueResponses();
+        std::thread queueResponsesThread;
+        std::mutex queueMutex;
+        std::atomic_bool connected{false};
+
     public:
         Server(std::string host, std::string port);
         ~Server();

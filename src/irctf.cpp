@@ -40,12 +40,29 @@ struct ResponseVisitor
     };
 };
 
-void runWindow(gui::Window& window);
+void runWindow(gui::Window& window, irc::Server& server);
 
 int main(int argc, char* argv[])
 {
     std::cout << " IRCTF v0.1 \n"
                  "############\n\n";
+
+    std::unique_ptr<irc::Server> server;
+
+    try
+    {
+        server = std::make_unique<irc::Server>("localhost", "6667");
+        server->connect();
+
+        server->nick("silvermantis");
+        server->auth("silvermantis", "James");
+        server->join("#test");
+    }
+    catch(const std::exception& e)
+    {
+        std::cerr << "[!] IRC network error: " << e.what() << '\n';
+        return -1;
+    }
 
     std::unique_ptr<gui::Window> window;
 
@@ -60,43 +77,15 @@ int main(int argc, char* argv[])
         std::exit(-1);
     }
 
-    runWindow(*window);
+    runWindow(*window, *server);
     gui::terminate();
 
-    std::unique_ptr<irc::Server> server;
-
-    try
-    {
-        server = std::make_unique<irc::Server>("localhost", "6667");
-        ResponseVisitor rVisit(*server);
-
-        server->connect();
-        server->nick("silvermantis");
-        server->auth("silvermantis", "James");
-        server->join("#test");
-
-        for (;;)
-        {
-            std::cout << "[+] reading responses...\n";
-
-            for (irc::response::responseVarient response : server->fetch())
-            {
-                std::visit(rVisit, response);
-            }
-        }
-
-        server->quit();
-    }
-    catch (std::exception& e)
-    {
-        std::cerr << "[!] IRC network error: " << e.what() << '\n';
-        return -1;
-    }
+    server->quit();
 
     return 0;
 }
 
-void runWindow(gui::Window& window)
+void runWindow(gui::Window& window, irc::Server& server)
 {
     using namespace gui;
 
@@ -118,6 +107,8 @@ void runWindow(gui::Window& window)
     std::unique_ptr<Button> printButton{std::make_unique<Button>(window, 680,
         570, 100, 20, "send", std::move(printInput))};
     printInput = nullptr;
+
+    ResponseVisitor rVisit(server);
 
     for (;;)
     {
@@ -176,6 +167,20 @@ void runWindow(gui::Window& window)
                     tabBar->activeTab->second.scroll(100);
                 }
             }
+        }
+
+        try
+        {
+            for (irc::response::responseVarient response : server.fetch())
+            {
+                std::cout << "[+] received message\n";
+                std::visit(rVisit, response);
+            }
+        }
+        catch (std::exception& e)
+        {
+            std::cerr << "[!] IRC network error: " << e.what() << '\n';
+            return;
         }
 
         window.clear();

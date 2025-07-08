@@ -1,5 +1,5 @@
 #include "network.hpp"
-#include <asio/impl/read.hpp>
+#include <asio.hpp>
 #include <string>
 #include <iostream>
 #include <utility>
@@ -17,6 +17,8 @@ Server::Server(std::string host, std::string port)
 
 Server::~Server()
 {
+    connected = false;
+
     for (const std::pair<std::string, Channel*> c : joined)
     {
         delete c.second;
@@ -28,9 +30,71 @@ Server::~Server()
     }
 }
 
+static std::string readOverflow = "";
+void Server::queueResponses()
+{
+    while (connected)
+    {
+        std::array<char, READ_BUF_SIZE> buf;
+
+        size_t readLen;
+
+        try
+        {
+            readLen = {socket.read_some(asio::buffer(buf))};
+        }
+        catch (asio::system_error& e)
+        {
+            if (e.code() == asio::error::eof)
+            {
+                return;
+            }
+        }
+
+        std::string bufStr = std::string(buf.data(), readLen);
+
+        if (bufStr.back() != '\n')
+        {
+            readOverflow += bufStr;
+            continue;
+        }
+        else
+        {
+            bufStr = readOverflow + bufStr;
+            readOverflow.clear();
+        }
+
+        queueMutex.lock();
+
+        size_t pos;
+        for (int iter = 0; (pos = bufStr.find("\r\n")) != std::string::npos;
+            iter++)
+        {
+            std::string word = bufStr.substr(0, pos);
+            std::cout << ">>> " << word << '\n';
+
+            responseQueue.emplace_back(response::readResponse(std::move(word)));
+
+            bufStr = bufStr.substr(pos += 2);
+        }
+
+        queueMutex.unlock();
+    }
+
+    std::cout << "!connected\n";
+}
+
 void Server::connect()
 {
+    if (connected)
+    {
+        return;
+    }
+
     asio::connect(socket, endpoints);
+    connected = true;
+    queueResponsesThread = std::thread(&Server::queueResponses, this);
+    queueResponsesThread.detach();
 }
 
 void Server::nick(std::string value)
@@ -51,11 +115,13 @@ void Server::join(std::string channel)
 void Server::quit()
 {
     send("QUIT");
+    connected = false;
 }
 
 void Server::quit(std::string message)
 {
     send("QUIT :" + message);
+    connected = false;
 }
 
 void Server::send(std::string message)
@@ -63,40 +129,14 @@ void Server::send(std::string message)
     asio::write(socket, asio::buffer(message + "\r\n"));
 }
 
-static std::string readOverflow = "";
 std::vector<response::responseVarient> Server::fetch()
 {
-    std::vector<response::responseVarient> responses;
+    queueMutex.lock();
+    std::vector<response::responseVarient> result(responseQueue);
+    responseQueue.clear();
+    queueMutex.unlock();
 
-    std::array<char, READ_BUF_SIZE> buf;
-    size_t readLen = socket.read_some(asio::buffer(buf));
-    std::string bufStr = std::string(buf.data(), readLen);
-
-    if (bufStr.back() != '\n')
-    {
-        readOverflow += bufStr;
-        return { };
-    }
-    else
-    {
-        bufStr = readOverflow + bufStr;
-        readOverflow.clear();
-    }
-
-    size_t pos;
-    for (int iter = 0; (pos = bufStr.find("\r\n")) != std::string::npos; iter++)
-    {
-        std::string word = bufStr.substr(0, pos);
-        std::cout << ">>> " << word << '\n';
-
-        response::responseVarient response
-            = response::readResponse(std::move(word));
-        responses.push_back(std::move(response));
-
-        bufStr = bufStr.substr(pos += 2);
-    }
-
-    return responses;
+    return result;
 }
 
 User::User(std::string nick, std::string username)
