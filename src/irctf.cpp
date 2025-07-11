@@ -4,40 +4,11 @@
 #include "gui/gui.hpp"
 #include <math.h>
 
+void visitResponse(irc::response::responseVarient& varient, irc::Server&
+    server);
+
 struct ResponseVisitor
 {
-    irc::Server& server;
-    ResponseVisitor(irc::Server& server) : server(server) { }
-
-    void operator() (const irc::response::Response&)
-    {
-        std::cout << "[+] RESPONSE\n";
-    };
-
-    void operator() (const irc::response::Join& response)
-    {
-        std::cout << "[+] JOIN <" << response.channel << "> (" << response.nick
-            << ")\n";
-        server.join(response.channel);
-    };
-
-    void operator() (const irc::response::Numeric&)
-    {
-        std::cout << "[+] NUMERIC\n";
-    };
-
-    void operator() (irc::response::Ping& response)
-    {
-        std::cout << "[+] PING\n";
-        response.pong(server);
-    };
-
-    void operator() (irc::response::Privmsg& response)
-    {
-        std::cout << "[+] PRIVMSG\n";
-        std::cout << "[" << response.channel << "] <" << response.nick << "> "
-            << response.message << '\n';
-    };
 };
 
 void runWindow(gui::Window& window, irc::Server& server);
@@ -108,7 +79,7 @@ void runWindow(gui::Window& window, irc::Server& server)
         570, 100, 20, "send", std::move(printInput))};
     printInput = nullptr;
 
-    ResponseVisitor rVisit(server);
+    // visitResponse(/**/);
 
     for (;;)
     {
@@ -174,7 +145,7 @@ void runWindow(gui::Window& window, irc::Server& server)
             for (irc::response::responseVarient response : server.fetch())
             {
                 std::cout << "[+] received message\n";
-                std::visit(rVisit, response);
+                visitResponse(response, server);
             }
         }
         catch (std::exception& e)
@@ -190,5 +161,35 @@ void runWindow(gui::Window& window, irc::Server& server)
         tabBar->draw();
 
         window.display();
+    }
+}
+
+void visitResponse(irc::response::responseVarient& varient, irc::Server& server)
+{
+    using namespace irc::response;
+
+    switch (varient.index())
+    {
+    case 0:
+        std::cout << "[+] RESPONSE\n";
+        break;
+    case 1:
+        std::cout << "[+] NUMERIC\n";
+        break;
+    case 2:
+        std::cout << "[+] JOIN <" << std::get<Join>(varient).channel << "> (" <<
+            std::get<Join>(varient).nick << ")\n";
+        server.join(std::get<Join>(varient).channel);
+        break;
+    case 3:
+        std::cout << "[+] PING\n";
+        std::get<Ping>(varient).pong(server);
+        break;
+    case 4:
+        std::cout << "[+] PRIVMSG\n";
+        std::cout << "[" << std::get<Privmsg>(varient).channel << "] <" <<
+            std::get<Privmsg>(varient).nick << "> " <<
+            std::get<Privmsg>(varient).message << '\n';
+        break;
     }
 }
