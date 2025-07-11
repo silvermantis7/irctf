@@ -5,11 +5,7 @@
 #include <math.h>
 
 void visitResponse(irc::response::responseVarient& varient, irc::Server&
-    server);
-
-struct ResponseVisitor
-{
-};
+    server, gui::MessageDisplay& messageDisplay);
 
 void runWindow(gui::Window& window, irc::Server& server);
 
@@ -145,7 +141,7 @@ void runWindow(gui::Window& window, irc::Server& server)
             for (irc::response::responseVarient response : server.fetch())
             {
                 std::cout << "[+] received message\n";
-                visitResponse(response, server);
+                visitResponse(response, server, tabBar->activeTab->second);
             }
         }
         catch (std::exception& e)
@@ -164,7 +160,8 @@ void runWindow(gui::Window& window, irc::Server& server)
     }
 }
 
-void visitResponse(irc::response::responseVarient& varient, irc::Server& server)
+void visitResponse(irc::response::responseVarient& varient, irc::Server& server,
+    gui::MessageDisplay& messageDisplay)
 {
     using namespace irc::response;
 
@@ -190,6 +187,11 @@ void visitResponse(irc::response::responseVarient& varient, irc::Server& server)
         std::cout << "[" << std::get<Privmsg>(varient).channel << "] <" <<
             std::get<Privmsg>(varient).nick << "> " <<
             std::get<Privmsg>(varient).message << '\n';
+
+        using Message = gui::MessageDisplay::Message;
+        messageDisplay.logMessage(Message{std::time(nullptr),
+            std::get<Privmsg>(varient).nick,
+            std::get<Privmsg>(varient).message});
         break;
     }
 }
