@@ -66,7 +66,14 @@ void runWindow(gui::Window& window, irc::Server& server)
         if (tabBar->activeTab && !textBox->textBuffer.empty())
         {
             tabBar->activeTab->second.logMessage({std::time(nullptr), "nick",
-                textBox->textBuffer});
+                textBox->textBuffer});                
+            auto activeChannel{tabBar->activeTab->first->getName};
+
+            if (activeChannel != "global")
+            {
+                server.privmsg(activeChannel, textBox->textBuffer);
+            }
+
             textBox->textBuffer.clear();
         }
     };

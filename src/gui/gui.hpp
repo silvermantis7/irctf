@@ -142,6 +142,7 @@ namespace gui
         std::string name;
         TabBar& tabBar;
     public:
+        const std::string& getName{name};
         BLRgba32 bgColor{BLRgba32(0xff353652)};
         BLRgba32 borderColor{BLRgba32(0xff686881)};
         BLRgba32 textColor{BLRgba32(0xffffffff)};

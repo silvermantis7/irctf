@@ -92,19 +92,25 @@ void Server::connect()
     queueResponsesThread.detach();
 }
 
-void Server::nick(std::string value)
+void Server::nick(std::string_view value)
 {
-    send("NICK " + value);
+    send(std::string("NICK ").append(value));
 }
 
-void Server::auth(std::string username, std::string realname)
+void Server::auth(std::string_view username, std::string_view realname)
 {
-    send("USER " + username + " 0 * :" + realname);
+    send(std::string("USER ").append(username).append(" 0 * :")
+        .append(realname));
 }
 
-void Server::join(std::string channel)
+void Server::join(std::string_view channel)
 {
-    send("JOIN " + channel);
+    send(std::string("JOIN ").append(channel));
+}
+
+void Server::privmsg(std::string_view channel, std::string_view message)
+{
+    send(std::string("PRIVMSG ").append(channel).append(" :").append(message));
 }
 
 void Server::quit()
@@ -113,15 +119,15 @@ void Server::quit()
     connected = false;
 }
 
-void Server::quit(std::string message)
+void Server::quit(std::string_view message)
 {
-    send("QUIT :" + message);
+    send(std::string("QUIT :").append(message));
     connected = false;
 }
 
-void Server::send(std::string message)
+void Server::send(std::string_view message)
 {
-    asio::write(socket, asio::buffer(message + "\r\n"));
+    asio::write(socket, asio::buffer(std::string(message).append("\r\n")));
 }
 
 std::vector<response::responseVarient> Server::fetch()

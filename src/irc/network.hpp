@@ -1,7 +1,6 @@
 #pragma once
 
 #include <string>
-#include <unordered_map>
 #include <vector>
 #include <asio.hpp>
 #include <variant>
@@ -238,12 +237,13 @@ namespace irc
         std::vector<response::responseVarient> fetch();
 
         // messages
-        void nick(std::string value);
-        void auth(std::string username, std::string realname);
-        void join(std::string channel);
+        void nick(std::string_view value);
+        void auth(std::string_view username, std::string_view realname);
+        void join(std::string_view channel);
+        void privmsg(std::string_view channel, std::string_view message);
         void quit();
-        void quit(std::string message);
-        void send(std::string command);
+        void quit(std::string_view message);
+        void send(std::string_view command);
     };
 
     class MessageTarget
