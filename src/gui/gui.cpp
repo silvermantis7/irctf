@@ -491,7 +491,8 @@ void Tab::draw()
     BLRoundRect roundRect{posX, posY, width, height + 5, 10};
     window.blContext.clipToRect(BLRect(posX, posY, width, height));
 
-    window.blContext.fillRoundRect(roundRect, bgColor);
+    window.blContext.fillRoundRect(roundRect, tabBar.activeTab->first.get() ==
+        this ? activeColor : bgColor);
     window.blContext.setStrokeWidth(1);
     window.blContext.strokeRoundRect(roundRect, borderColor);
 

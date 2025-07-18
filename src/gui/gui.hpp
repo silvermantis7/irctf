@@ -142,9 +142,10 @@ namespace gui
         std::string name;
         TabBar& tabBar;
     public:
-        BLRgba32 bgColor = BLRgba32(0xff454662);
-        BLRgba32 borderColor = BLRgba32(0xff686881);
-        BLRgba32 textColor = BLRgba32(0xffffffff);
+        BLRgba32 bgColor{BLRgba32(0xff353652)};
+        BLRgba32 borderColor{BLRgba32(0xff686881)};
+        BLRgba32 textColor{BLRgba32(0xffffffff)};
+        BLRgba32 activeColor{BLRgba32(0xff454662)};
         Tab(Window& window, double posX, double posY, double width, double
             height, std::string name, TabBar& tabBar);
         void draw() override;
