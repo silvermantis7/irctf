@@ -5,7 +5,7 @@
 #include <math.h>
 
 void visitResponse(irc::response::responseVarient& varient, irc::Server&
-    server, gui::MessageDisplay& messageDisplay);
+    server, gui::TabBar& tabBar);
 
 void runWindow(gui::Window& window, irc::Server& server);
 
@@ -75,8 +75,6 @@ void runWindow(gui::Window& window, irc::Server& server)
         570, 100, 20, "send", std::move(printInput))};
     printInput = nullptr;
 
-    // visitResponse(/**/);
-
     for (;;)
     {
         float mouseX, mouseY;
@@ -141,7 +139,7 @@ void runWindow(gui::Window& window, irc::Server& server)
             for (irc::response::responseVarient response : server.fetch())
             {
                 std::cout << "[+] received message\n";
-                visitResponse(response, server, tabBar->activeTab->second);
+                visitResponse(response, server, *tabBar);
             }
         }
         catch (std::exception& e)
@@ -161,7 +159,7 @@ void runWindow(gui::Window& window, irc::Server& server)
 }
 
 void visitResponse(irc::response::responseVarient& varient, irc::Server& server,
-    gui::MessageDisplay& messageDisplay)
+    gui::TabBar& tabBar)
 {
     using namespace irc::response;
 
@@ -177,6 +175,7 @@ void visitResponse(irc::response::responseVarient& varient, irc::Server& server,
         std::cout << "[+] JOIN <" << std::get<Join>(varient).channel << "> (" <<
             std::get<Join>(varient).nick << ")\n";
         server.join(std::get<Join>(varient).channel);
+        tabBar.addChannel(std::get<Join>(varient).channel);
         break;
     case 3:
         std::cout << "[+] PING\n";
@@ -189,9 +188,19 @@ void visitResponse(irc::response::responseVarient& varient, irc::Server& server,
             std::get<Privmsg>(varient).message << '\n';
 
         using Message = gui::MessageDisplay::Message;
-        messageDisplay.logMessage(Message{std::time(nullptr),
+
+        auto messageDisplay{tabBar.messageDisplays.find(std::get<Privmsg>
+            (varient).channel)};
+
+        if (messageDisplay == tabBar.messageDisplays.end())
+        {
+            break;
+        }
+
+        messageDisplay->second.second.logMessage(Message{std::time(nullptr),
             std::get<Privmsg>(varient).nick,
             std::get<Privmsg>(varient).message});
+        
         break;
     }
 }

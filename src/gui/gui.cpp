@@ -541,6 +541,7 @@ void TabBar::draw()
 void TabBar::addChannel(const std::string& name)
 {
     messageDisplays.emplace(name, std::make_pair(std::make_unique<Tab>(window,
-        posX + 5, posY, 100, height, name, *this), MessageDisplay(window, posX,
+        tabX, posY, 100, height, name, *this), MessageDisplay(window, posX,
         posY + height, width, 500)));
+    tabX += 100;
 }

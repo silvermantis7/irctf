@@ -153,6 +153,7 @@ namespace gui
 
     class TabBar : public Widget
     {
+        double tabX{posX + 5};
     public:
         std::pair<std::unique_ptr<Tab>, MessageDisplay>* activeTab = nullptr;
         std::unordered_map<std::string, std::pair<std::unique_ptr<Tab>,

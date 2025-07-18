@@ -19,11 +19,6 @@ Server::~Server()
 {
     connected = false;
 
-    for (const std::pair<std::string, Channel*> c : joined)
-    {
-        delete c.second;
-    }
-
     for (User* u : users)
     {
         delete u;

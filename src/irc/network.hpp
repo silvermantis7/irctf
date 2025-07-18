@@ -218,7 +218,6 @@ namespace irc
 
     class Server
     {
-        std::unordered_map<std::string, Channel*> joined;
         std::vector<User*> users;
         std::string host;
         std::string port;
