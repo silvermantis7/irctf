@@ -1,3 +1,5 @@
+#pragma once
+
 #include <blend2d.h>
 #include <exception>
 #include <memory>

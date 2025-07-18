@@ -3,9 +3,7 @@
 #include "irc/network.hpp"
 #include "gui/gui.hpp"
 #include <math.h>
-
-void visitResponse(irc::response::responseVarient& varient, irc::Server&
-    server, gui::TabBar& tabBar);
+#include "visit_response.hpp"
 
 void runWindow(gui::Window& window, irc::Server& server);
 
@@ -146,7 +144,25 @@ void runWindow(gui::Window& window, irc::Server& server)
             for (irc::response::responseVarient response : server.fetch())
             {
                 std::cout << "[+] received message\n";
-                visitResponse(response, server, *tabBar);
+
+                switch (response.index())
+                {
+                case 0:
+                    visitResponse<0>(response, server, *tabBar);
+                    break;
+                case 1:
+                    visitResponse<1>(response, server, *tabBar);
+                    break;
+                case 2:
+                    visitResponse<2>(response, server, *tabBar);
+                    break;
+                case 3:
+                    visitResponse<3>(response, server, *tabBar);
+                    break;
+                case 4:
+                    visitResponse<4>(response, server, *tabBar);
+                    break;
+                }
             }
         }
         catch (std::exception& e)
@@ -162,52 +178,5 @@ void runWindow(gui::Window& window, irc::Server& server)
         tabBar->draw();
 
         window.display();
-    }
-}
-
-void visitResponse(irc::response::responseVarient& varient, irc::Server& server,
-    gui::TabBar& tabBar)
-{
-    using namespace irc::response;
-
-    switch (varient.index())
-    {
-    case 0:
-        std::cout << "[+] RESPONSE\n";
-        break;
-    case 1:
-        std::cout << "[+] NUMERIC\n";
-        break;
-    case 2:
-        std::cout << "[+] JOIN <" << std::get<Join>(varient).channel << "> (" <<
-            std::get<Join>(varient).nick << ")\n";
-        server.join(std::get<Join>(varient).channel);
-        tabBar.addChannel(std::get<Join>(varient).channel);
-        break;
-    case 3:
-        std::cout << "[+] PING\n";
-        std::get<Ping>(varient).pong(server);
-        break;
-    case 4:
-        std::cout << "[+] PRIVMSG\n";
-        std::cout << "[" << std::get<Privmsg>(varient).channel << "] <" <<
-            std::get<Privmsg>(varient).nick << "> " <<
-            std::get<Privmsg>(varient).message << '\n';
-
-        using Message = gui::MessageDisplay::Message;
-
-        auto messageDisplay{tabBar.messageDisplays.find(std::get<Privmsg>
-            (varient).channel)};
-
-        if (messageDisplay == tabBar.messageDisplays.end())
-        {
-            break;
-        }
-
-        messageDisplay->second.second.logMessage(Message{std::time(nullptr),
-            std::get<Privmsg>(varient).nick,
-            std::get<Privmsg>(varient).message});
-        
-        break;
     }
 }
