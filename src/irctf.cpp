@@ -4,6 +4,7 @@
 #include "gui/gui.hpp"
 #include <math.h>
 #include "visit_response.hpp"
+#include <ranges>
 
 void runWindow(gui::Window& window, irc::Server& server);
 
@@ -63,6 +64,32 @@ void runWindow(gui::Window& window, irc::Server& server)
     {
         if (tabBar->activeTab && !textBox->textBuffer.empty())
         {
+            if (textBox->textBuffer.front() == '/')
+            {
+                textBox->textBuffer.erase(0, 1);
+
+                if (!textBox->textBuffer.empty()
+                    && textBox->textBuffer.front() != '/')
+                {
+                    std::vector<std::string_view> commandWords;
+                    for (const auto& word : std::views::split(
+                        textBox->textBuffer, ' '))
+                    {
+                        commandWords.emplace_back(word.begin(), word.end());
+                    }
+
+                    if (commandWords.front() == "join"
+                        && commandWords.size() == 2)
+                    {
+                        server.join(commandWords.at(1));
+                    }
+
+                    textBox->textBuffer.clear();
+
+                    return;
+                }
+            }
+
             tabBar->activeTab->second.logMessage({std::time(nullptr), "nick",
                 textBox->textBuffer});                
             auto activeChannel{tabBar->activeTab->first->getName};

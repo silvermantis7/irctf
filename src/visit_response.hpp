@@ -33,7 +33,6 @@ void visitResponse<2>(irc::response::responseVarient& varient, irc::Server&
 
     std::cout << "[+] JOIN <" << std::get<Join>(varient).channel << "> (" <<
         std::get<Join>(varient).nick << ")\n";
-    server.join(std::get<Join>(varient).channel);
     tabBar.addChannel(std::get<Join>(varient).channel);
 }
 
