@@ -127,6 +127,7 @@ void runWindow(gui::Window& window, irc::Server& server)
         Selectable::findFocus(mouseX, mouseY);
         Selectable* inFocus = Selectable::hovered;
 
+        // read keyboard and mouse events
         SDL_Event event;
         while (window.pollEvents(event))
         {
@@ -170,11 +171,62 @@ void runWindow(gui::Window& window, irc::Server& server)
 
                 if (event.key.key == SDLK_PAGEUP && tabBar->activeTab)
                 {
-                    tabBar->activeTab->second.scroll(-100);
+                    if (SDL_GetModState() & SDL_KMOD_CTRL)
+                    {
+                        auto* target = &tabBar->messageDisplays.at("global");
+
+                        // find tab to the left
+                        for (auto msgDisplay = tabBar->messageDisplays.begin();
+                            msgDisplay != tabBar->messageDisplays.end();
+                            ++msgDisplay)
+                        {
+                            if (msgDisplay->second.first->posX
+                                < tabBar->activeTab->first->posX
+                                && msgDisplay->second.first->posX
+                                > target->first->posX)
+                            {
+                                target = &msgDisplay->second;
+                            }
+                        }
+
+                        tabBar->activeTab = target;
+                    }
+                    else
+                    {
+                        tabBar->activeTab->second.scroll(-100);
+                    }
                 }
                 else if (event.key.key == SDLK_PAGEDOWN && tabBar->activeTab)
                 {
                     tabBar->activeTab->second.scroll(100);
+
+                    if (SDL_GetModState() & SDL_KMOD_CTRL)
+                    {
+                        auto* target = tabBar->activeTab;
+
+                        // find tab to the right
+                        for (auto msgDisplay = tabBar->messageDisplays.begin();
+                            msgDisplay != tabBar->messageDisplays.end();
+                            ++msgDisplay)
+                        {
+                            if (target == tabBar->activeTab)
+                            {
+                                if (msgDisplay->second.first->posX > target->first->posX)
+                                {
+                                    target = &msgDisplay->second;
+                                }
+                            }
+                            else if (msgDisplay->second.first->posX
+                                > tabBar->activeTab->first->posX
+                                && msgDisplay->second.first->posX
+                                < target->first->posX)
+                            {
+                                target = &msgDisplay->second;
+                            }
+                        }
+
+                        tabBar->activeTab = target;
+                    }
                 }
             }
         }
