@@ -546,3 +546,35 @@ void TabBar::addChannel(const std::string& name)
         posY + height, width, 500)));
     tabX += 100;
 }
+
+void TabBar::closeTab(const std::string& channel)
+{
+    auto messageDisplay = messageDisplays.find(channel);
+
+    if (messageDisplay == messageDisplays.end())
+    {
+        return;
+    }
+
+    double gapPos = messageDisplay->second.first->posX;
+    double gapWidth = messageDisplay->second.first->width;
+
+    if (&messageDisplay->second == activeTab)
+    {
+        activeTab = &messageDisplays.at("global");
+    }
+
+    messageDisplays.erase(messageDisplay);
+
+    // shift proceeding tabs to fill empty space
+    for (auto tab = messageDisplays.begin(); tab != messageDisplays.end();
+        ++tab)
+    {
+        if (tab->second.first->posX > gapPos)
+        {
+            tab->second.first->posX -= gapWidth;
+        }
+    }
+
+    tabX -= gapWidth;
+}

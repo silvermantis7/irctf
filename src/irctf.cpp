@@ -83,6 +83,19 @@ void runWindow(gui::Window& window, irc::Server& server)
                     {
                         server.join(commandWords.at(1));
                     }
+                    else if (commandWords.front() == "part")
+                    {
+                        if (commandWords.size() == 2)
+                        {
+                            server.part(commandWords.at(1).data());
+                        }
+                        else if (commandWords.size() >= 3)
+                        {
+                            server.part(commandWords.at(1), std::string_view(
+                                commandWords.at(2).begin(),
+                                commandWords.back().end()));
+                        }
+                    }
 
                     textBox->textBuffer.clear();
 
@@ -91,7 +104,7 @@ void runWindow(gui::Window& window, irc::Server& server)
             }
 
             tabBar->activeTab->second.logMessage({std::time(nullptr), "nick",
-                textBox->textBuffer});                
+                textBox->textBuffer});
             auto activeChannel{tabBar->activeTab->first->getName};
 
             if (activeChannel != "global")
@@ -134,7 +147,7 @@ void runWindow(gui::Window& window, irc::Server& server)
                 {
                     char letter = gui::readChar(event, SDL_GetModState()
                         & SDL_KMOD_SHIFT);
-                    
+
                     if (letter)
                     {
                         static_cast<TextBox*>
@@ -188,6 +201,9 @@ void runWindow(gui::Window& window, irc::Server& server)
                     break;
                 case 4:
                     visitResponse<4>(response, server, *tabBar);
+                    break;
+                case 5:
+                    visitResponse<5>(response, server, *tabBar);
                     break;
                 }
             }

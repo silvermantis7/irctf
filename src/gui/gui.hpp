@@ -167,6 +167,7 @@ namespace gui
 
         void draw() override;
         void addChannel(const std::string& name);
+        void closeTab(const std::string& channel);
     };
 
     static BLFont blFont;

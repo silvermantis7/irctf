@@ -32,7 +32,8 @@ namespace irc
             {
                 NUMERIC,
                 JOIN,
-                PRIVMSG
+                PRIVMSG,
+                PART
             };
 
             Response(std::vector<std::string> words);
@@ -61,6 +62,13 @@ namespace irc
             std::string nick;
             std::string message;
             Privmsg(std::vector<std::string> words);
+        };
+
+        class Part : public Response
+        {
+        public:
+            std::string channel;
+            Part(std::vector<std::string> words);
         };
 
         class Numeric : public Response
@@ -211,7 +219,7 @@ namespace irc
         };
 
         typedef std::variant<Response, Numeric, Join, Ping,
-            Privmsg> responseVarient;
+            Privmsg, Part> responseVarient;
         responseVarient readResponse(std::string raw);
     }
 
@@ -244,6 +252,8 @@ namespace irc
         void quit();
         void quit(std::string_view message);
         void send(std::string_view command);
+        void part(std::string_view channel);
+        void part(std::string_view channel, std::string_view message);
     };
 
     class MessageTarget
@@ -262,17 +272,6 @@ namespace irc
         ~User();
         std::string nick;
         std::string username;
-        void privmsg(std::string content) override;
-    };
-
-    class Channel : public MessageTarget
-    {
-    public:
-        Channel(std::string name);
-        std::string name;
-        std::vector<User*> users;
-        void part();
-        void part(std::string message);
         void privmsg(std::string content) override;
     };
 }

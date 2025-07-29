@@ -32,7 +32,8 @@ const char* ParseError::what() const noexcept
 
 const std::unordered_map<std::string, Response::ResponseType> commandNames = {
     {"JOIN", Response::ResponseType::JOIN},
-    {"PRIVMSG", Response::ResponseType::PRIVMSG}
+    {"PRIVMSG", Response::ResponseType::PRIVMSG},
+    {"PART", Response::ResponseType::PART},
 };
 
 responseVarient irc::response::readResponse(std::string raw)
@@ -77,6 +78,8 @@ responseVarient irc::response::readResponse(std::string raw)
                 return Join(std::move(words));
             case Response::ResponseType::PRIVMSG:
                 return Privmsg(std::move(words));
+            case Response::ResponseType::PART:
+                return Part(std::move(words));
             default:
                 throw ParseError("Unable to determine command type", words);
                 break;
@@ -136,6 +139,18 @@ Privmsg::Privmsg(std::vector<std::string> words) : Response(std::move(words))
     catch (std::out_of_range& e)
     {
         throw ParseError("malformed PRIVMSG recieved", this->words);
+    }
+}
+
+Part::Part(std::vector<std::string> words) : Response(std::move(words))
+{
+    if (this->words.size() >= 3)
+    {
+        channel = this->words.at(2);
+    }
+    else
+    {
+        throw ParseError("malformed PART message received", this->words);
     }
 }
 

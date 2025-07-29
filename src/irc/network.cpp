@@ -130,6 +130,16 @@ void Server::send(std::string_view message)
     asio::write(socket, asio::buffer(std::string(message).append("\r\n")));
 }
 
+void Server::part(std::string_view channel)
+{
+    send(std::string("PART ").append(channel));
+}
+
+void Server::part(std::string_view channel, std::string_view message)
+{
+    send(std::string("PART ").append(channel).append(" :").append(message));
+}
+
 std::vector<response::responseVarient> Server::fetch()
 {
     queueMutex.lock();
@@ -149,22 +159,4 @@ User::~User() { }
 void User::privmsg(std::string content)
 {
     server->send("PRIVMSG " + nick + " :" + content);
-}
-
-Channel::Channel(std::string name)
-    : name(name) { }
-
-void Channel::part()
-{
-    server->send("PART " + name);
-}
-
-void Channel::part(std::string message)
-{
-    server->send("PART " + name + " :" + message);
-}
-
-void Channel::privmsg(std::string message)
-{
-    server->send("PRIVMSG " + name + " :" + message);
 }
