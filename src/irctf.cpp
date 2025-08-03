@@ -1,5 +1,6 @@
 #include <iostream>
 #include <memory>
+#include "gui/gui/log_item.hpp"
 #include "irc/network.hpp"
 #include "gui/gui.hpp"
 #include <math.h>
@@ -103,8 +104,11 @@ void runWindow(gui::Window& window, irc::Server& server)
                 }
             }
 
-            tabBar->activeTab->second.logMessage({std::time(nullptr), "nick",
-                textBox->textBuffer});
+            tabBar->activeTab->second.logMessage(log_item::Message {
+                std::time(nullptr), "nick",
+                textBox->textBuffer
+            });
+
             auto activeChannel{tabBar->activeTab->first->getName};
 
             if (activeChannel != "global")
@@ -198,8 +202,6 @@ void runWindow(gui::Window& window, irc::Server& server)
                 }
                 else if (event.key.key == SDLK_PAGEDOWN && tabBar->activeTab)
                 {
-                    tabBar->activeTab->second.scroll(100);
-
                     if (SDL_GetModState() & SDL_KMOD_CTRL)
                     {
                         auto* target = tabBar->activeTab;
@@ -211,21 +213,28 @@ void runWindow(gui::Window& window, irc::Server& server)
                         {
                             if (target == tabBar->activeTab)
                             {
-                                if (msgDisplay->second.first->posX > target->first->posX)
-                                {
+                                if (
+                                    msgDisplay->second.first->posX
+                                    > target->first->posX
+                                ) {
                                     target = &msgDisplay->second;
                                 }
                             }
-                            else if (msgDisplay->second.first->posX
+                            else if (
+                                msgDisplay->second.first->posX
                                 > tabBar->activeTab->first->posX
                                 && msgDisplay->second.first->posX
-                                < target->first->posX)
-                            {
+                                < target->first->posX
+                            ) {
                                 target = &msgDisplay->second;
                             }
                         }
 
                         tabBar->activeTab = target;
+                    }
+                    else
+                    {
+                        tabBar->activeTab->second.scroll(100);
                     }
                 }
             }

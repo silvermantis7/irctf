@@ -9,6 +9,8 @@
 #include <functional>
 #include <ctime>
 
+#include "gui/log_item.hpp"
+
 namespace gui
 {
     class GuiError;
@@ -117,11 +119,7 @@ namespace gui
 
     class MessageDisplay : public Widget
     {
-    public:
-        // time logged, nick, message
-        typedef std::tuple<std::time_t, std::string, std::string> Message;
-    private:
-        std::vector<Message> messages;
+        std::vector<log_item::LogItem> messages;
         double nickPosX = 0;
         double msgPosX = 0;
     public:
@@ -134,8 +132,43 @@ namespace gui
         BLRgba32 textColor = BLRgba32(0xffffffff);
 
         void draw() override;
-        void logMessage(Message message);
+        void logMessage(log_item::LogItem&& logItem);
         void scroll(double distance);
+
+        void formatMessage(
+            log_item::Message* message,
+            int* nLines,
+            int* nNewlines,
+            const double* maxMessagesVisible,
+            const double* offsetXText,
+            const double* spaceWidth,
+            int* offsetYTest,
+            const double* lineHeight
+        );
+
+        void drawItem(
+            log_item::FormattedMessage* message,
+            double* offsetY,
+            const double* wrapOverflowShift,
+            const double* offsetX,
+            const double* lineHeight
+        );
+
+        void drawItem(
+            const log_item::Join* join,
+            const double* offsetX,
+            double* offsetY,
+            const double* wrapOverflowShift,
+            const double* lineHeight
+        );
+
+        void drawItem(
+            const log_item::Part* part,
+            const double* offsetX,
+            double* offsetY,
+            const double* wrapOverflowShift,
+            const double* lineHeight
+        );
     };
 
     class Tab : public Selectable
@@ -170,8 +203,8 @@ namespace gui
         void closeTab(const std::string& channel);
     };
 
-    static BLFont blFont;
-    static BLFontFace blFontFace;
+    inline BLFont blFont;
+    inline BLFontFace blFontFace;
 
     char readChar(const SDL_Event& event, bool shiftKey);
 }

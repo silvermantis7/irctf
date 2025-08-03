@@ -67,7 +67,9 @@ namespace irc
         class Part : public Response
         {
         public:
+            std::string nick;
             std::string channel;
+            std::optional<std::string> message;
             Part(std::vector<std::string> words);
         };
 
@@ -218,8 +220,15 @@ namespace irc
             Numeric(std::vector<std::string> words, int numericID);
         };
 
-        typedef std::variant<Response, Numeric, Join, Ping,
-            Privmsg, Part> responseVarient;
+        typedef std::variant<
+            Response,
+            Numeric,
+            Join,
+            Ping,
+            Privmsg,
+            Part
+        > responseVarient;
+
         responseVarient readResponse(std::string raw);
     }
 
@@ -274,4 +283,7 @@ namespace irc
         std::string username;
         void privmsg(std::string content) override;
     };
+
+    // TODO: set this based on server response
+    inline std::string userNick { "silvermantis" };
 }

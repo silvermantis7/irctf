@@ -1,7 +1,9 @@
 #include "network.hpp"
+#include <algorithm>
 #include <exception>
 #include <iterator>
 #include <numeric>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
@@ -147,6 +149,30 @@ Part::Part(std::vector<std::string> words) : Response(std::move(words))
     if (this->words.size() >= 3)
     {
         channel = this->words.at(2);
+        nick = std::string(std::next(
+            this->words.front().begin()),
+            std::find(std::next(
+                this->words.front().begin()),
+                this->words.front().end(),
+                '!'
+            )
+        );
+
+        if (this->words.size() >= 4)
+        {
+            message = std::accumulate(
+                this->words.begin() + 4,
+                this->words.end(),
+                this->words.at(3).substr(1),
+                [](std::string acc, std::string next) {
+                    return acc + ' ' + next;
+                }
+            );
+        }
+        else
+        {
+            message = std::nullopt;
+        }
     }
     else
     {

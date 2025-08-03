@@ -1,12 +1,13 @@
 #include "gui.hpp"
-#include "blend2d/geometry.h"
+#include "gui/log_item.hpp"
 #include <SDL3/SDL.h>
 #include <algorithm>
 #include <blend2d.h>
 #include <cmath>
 #include <cstdlib>
 #include <ctime>
-#include <sstream>
+#include <utility>
+#include <vector>
 
 #ifndef _WIN32
 #include <fontconfig/fontconfig.h>
@@ -315,132 +316,99 @@ void MessageDisplay::draw()
 
     const double spaceWidth = textMetrics.advance.x;
 
-    // timestamp, nick, messages
-    typedef std::tuple<std::string, std::string, std::vector<std::string>>
-        PrintMessage;
-    std::vector<PrintMessage> printMessages;
-
     int offsetYTest = offsetY;
     double offsetXText = offsetX;
 
     int nLines = 0;
     int nNewlines = 0;
 
-    for (Message message : std::vector(messages.begin() +
-        std::floor(messagesScrolled), messages.end()))
-    {
-        PrintMessage printMessage;
+    // calculate range of log items to be printed
+    std::pair<
+        std::vector<log_item::LogItem>::iterator,
+        std::vector<log_item::LogItem>::iterator
+    > printRange;
 
+    printRange.first = messages.begin() + std::floor(messagesScrolled);
+    printRange.second = messages.end();
+
+    for (
+        auto logItem = printRange.first;
+        logItem != printRange.second;
+        logItem++
+    ) {
         if (nLines - nNewlines > maxMessagesVisible)
         {
             break;
         }
 
-        tm* timeInfo = localtime(&std::get<0>(message));
-        std::string msgText('[' + std::to_string(timeInfo->tm_hour) + ':' +
-            std::to_string(timeInfo->tm_min) + ':' +
-            std::to_string(timeInfo->tm_sec) + ']');
-        glyphBuffer.setUtf8Text(msgText.c_str());
-        blFont.getTextMetrics(glyphBuffer, textMetrics);
-        std::get<0>(printMessage) = msgText;
-
-        double nextPosXCandidate = posX + offsetXText + textMetrics.advance.x +
-            10;
-
-        if (nextPosXCandidate > nickPosX)
+        if (logItem->index() == log_item::LogItemType::MESSAGE)
         {
-            nickPosX = nextPosXCandidate;
+            formatMessage(
+                &std::get<log_item::Message>(*logItem),
+                &nLines,
+                &nNewlines,
+                &maxMessagesVisible,
+                &offsetXText,
+                &spaceWidth,
+                &offsetYTest,
+                &lineHeight
+            );
         }
         else
         {
-            nextPosXCandidate = nickPosX;
+            nLines++;
         }
-
-        msgText = std::string('<' + std::get<1>(message) + '>');
-        glyphBuffer.setUtf8Text(msgText.c_str());
-        blFont.getTextMetrics(glyphBuffer, textMetrics);
-        std::get<1>(printMessage) = msgText.c_str();
-
-        nextPosXCandidate += textMetrics.advance.x + 10;
-
-        if (nextPosXCandidate > msgPosX)
-        {
-            msgPosX = nextPosXCandidate;
-        }
-
-        std::string word;
-        std::stringstream ss(std::get<2>(message));
-
-        if (!std::getline(ss, word, ' '))
-        {
-            continue;
-        }
-
-        glyphBuffer.setUtf8Text(word.c_str());
-        blFont.getTextMetrics(glyphBuffer, textMetrics);
-
-        double wordPosX = msgPosX + textMetrics.advance.x + spaceWidth;
-        int msgIndex = 0;
-        int lastMsgIndex = 0;
-        nLines++;
-
-        ss.str(std::get<2>(message));
-
-        while (std::getline(ss, word, ' '))
-        {
-            glyphBuffer.setUtf8Text(word.c_str());
-            blFont.getTextMetrics(glyphBuffer, textMetrics);
-
-            if (wordPosX + textMetrics.advance.x >= posX + width - 5)
-            {
-                nLines++;
-                nNewlines++;
-                std::get<2>(printMessage).emplace_back(
-                    std::get<2>(message).substr(lastMsgIndex, msgIndex -
-                    lastMsgIndex - 1));
-                lastMsgIndex = msgIndex;
-
-                offsetYTest += lineHeight;
-
-                wordPosX = msgPosX;
-            }
-
-            wordPosX += textMetrics.advance.x + spaceWidth;
-            msgIndex += word.length() + 1;
-        }
-
-        std::get<2>(printMessage).emplace_back(std::get<2>(message).substr(
-            lastMsgIndex));
-
-        printMessages.push_back(std::move(printMessage));
-
-        offsetYTest += lineHeight;
     }
 
-    double wrapOverflowShift{offsetYTest > height ? (offsetYTest - height) *
-        scrollPercent : 0};
+    double wrapOverflowShift {
+        offsetYTest > height
+            ? (offsetYTest - height) * scrollPercent
+            : 0
+    };
 
-    for (PrintMessage& printMessage : printMessages)
-    {
-        double printY = posY + offsetY - wrapOverflowShift;
-        window.blContext.fillUtf8Text(BLPoint(posX + offsetX, printY), blFont,
-            std::get<0>(printMessage).c_str());
-        window.blContext.fillUtf8Text(BLPoint(nickPosX, printY), blFont,
-            std::get<1>(printMessage).c_str());
-
-        for (std::string& message : std::get<2>(printMessage))
+    for (
+        auto logItem = printRange.first;
+        logItem != printRange.second;
+        logItem++
+    ) {
+        switch (logItem->index())
         {
-            window.blContext.fillUtf8Text(BLPoint(msgPosX, printY), blFont,
-                message.c_str());
-            printY += lineHeight;
-            offsetY += lineHeight;
+        case log_item::LogItemType::MESSAGE:
+            drawItem(
+                &std::get<log_item::Message>(*logItem).formatted,
+                &offsetY,
+                &wrapOverflowShift,
+                &offsetX,
+                &lineHeight
+            );
+            break;
+        case log_item::LogItemType::JOIN:
+            drawItem(
+                &std::get<log_item::Join>(*logItem),
+                &offsetX,
+                &offsetY,
+                &wrapOverflowShift,
+                &lineHeight
+            );
+            break;
+        case log_item::LogItemType::PART:
+            drawItem(
+                &std::get<log_item::Part>(*logItem),
+                &offsetX,
+                &offsetY,
+                &wrapOverflowShift,
+                &lineHeight
+            );
+            break;
         }
     }
 
     if (nLines > std::floor(maxMessagesVisible))
     {
-        double scrollbarLen = height * maxMessagesVisible /
-            (double)messages.size();
+        double scrollbarLen =
+            height
+            * maxMessagesVisible
+            / (double)messages.size();
         double scrollPosY = posY + scrollPercent * (height - scrollbarLen);
         BLLine scrollLine(posX + width - 7, scrollPosY, posX + width - 7,
             scrollPosY + scrollbarLen);
@@ -451,9 +419,9 @@ void MessageDisplay::draw()
     window.blContext.restoreClipping();
 }
 
-void MessageDisplay::logMessage(Message message)
+void MessageDisplay::logMessage(log_item::LogItem&& logItem)
 {
-    messages.push_back(std::move(message));
+    messages.emplace_back(logItem);
 }
 
 void MessageDisplay::scroll(double distance)
@@ -502,8 +470,11 @@ void Tab::draw()
     glyphBuffer.setUtf8Text(name.c_str());
     blFont.getTextMetrics(glyphBuffer, textMetrics);
 
-    BLPoint textPos{(width - textMetrics.advance.x) / 2 + posX, posY + height -
-        (height - blFont.size()) / 2 - 2};
+    BLPoint textPos {
+        (width - textMetrics.advance.x) / 2 + posX,
+        posY + height - (height - blFont.size()) / 2 - 2
+    };
+
     window.blContext.fillUtf8Text(textPos, blFont, name.c_str());
 
     window.blContext.restoreClipping();
